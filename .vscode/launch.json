@@ -1,0 +1,21 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Debugger: Diffusion Train",
+            "type": "debugpy",
+            "request": "launch",
+            "justMyCode": false,
+            "program": "train.py",//"${file}",
+            "console": "integratedTerminal",
+            "args": [
+                "--base", "configs/example/stage1.yaml",
+                "--num_nodes", "1",
+                "--n_devices", "1"
+            ]
+        },
+    ]
+}

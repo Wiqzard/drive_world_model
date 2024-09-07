@@ -636,7 +636,7 @@ if __name__ == "__main__":
         model = instantiate_from_config(config.model)
 
         # use pretrained model
-        if not opt.resume or opt.finetune:
+        if False: #not opt.resume or opt.finetune:
             if not opt.finetune or not os.path.exists(opt.finetune):
                 default_ckpt = "ckpts/svd_xt.safetensors"
                 print(f"Loading pretrained model from {default_ckpt}")

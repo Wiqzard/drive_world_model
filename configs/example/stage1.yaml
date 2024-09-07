@@ -1,3 +1,4 @@
+# finetune on big dataset with large resolution
 model:
   base_learning_rate: 1.e-5
   target: vwm.models.diffusion.DiffusionEngine
@@ -30,15 +31,15 @@ model:
         use_checkpoint: True
         in_channels: 8
         out_channels: 4
-        model_channels: 32 #320
+        model_channels: 64 #128 #320
         attention_resolutions: [ 4, 2, 1 ]
         num_res_blocks: 2
         channel_mult: [1, 1, 1, 1] #[ 1, 2, 4, 4 ]
         num_head_channels: 64
         use_linear_in_transformer: True
         transformer_depth: 1
-        context_dim: 1024
-        spatial_transformer_attn_type: softmax-xformers
+        context_dim: 768 #1024
+        spatial_transformer_attn_type: softmax #-xformers
         extra_ff_mix_layer: True
         use_spatial_context: True
         merge_strategy: learned_with_images
@@ -93,13 +94,13 @@ model:
                   monitor: val/rec_loss
 
                   ddconfig:
-                    attn_type: vanilla-xformers
+                    attn_type: vanilla #-xformers
                     double_z: True
                     z_channels: 4
                     resolution: 256
                     in_channels: 3
                     out_ch: 3
-                    ch: 128
+                    ch: 32 #128
                     ch_mult: [ 1, 2, 4, 4 ]
                     num_res_blocks: 2
                     attn_resolutions: [ ]
@@ -133,8 +134,8 @@ model:
             resolution: 256
             in_channels: 3
             out_ch: 3
-            ch: 128
-            ch_mult: [1, 1, 1, 1] #[ 1, 2, 4, 4 ]
+            ch: 32 #128
+            ch_mult: [1, 2, 2, 4] # [ 1, 2, 4, 4 ]
             num_res_blocks: 2
             attn_resolutions: [ ]
             dropout: 0.0
@@ -211,7 +212,7 @@ data:
     batch_size: 1
     num_workers: 16
     subsets:
-      - YouTube
+      - H5Video #YouTube
     probs:
       - 1
     samples_per_epoch: 256000
@@ -238,10 +239,10 @@ lightning:
       every_n_epochs: 1  # every_n_train_steps: 5000, set the same as image_logger batch_frequency
 
   trainer:
-    devices: 0,1
+    devices: 0
     benchmark: True
     num_sanity_val_steps: 0
     accumulate_grad_batches: 2
     max_epochs: 100
-    strategy: deepspeed_stage_2
+    strategy: ddp #deepspeed_stage_2
     gradient_clip_val: 0.3
