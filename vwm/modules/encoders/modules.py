@@ -19,7 +19,7 @@ from vwm.util import (
     default,
     disabled_train,
     expand_dims_like,
-    instantiate_from_config
+    instantiate_from_config,
 )
 
 
@@ -255,11 +255,11 @@ class FrozenOpenCLIPImageEmbedder(AbstractEmbModel):
 
     def __init__(
             self,
-           # arch="ViT-H-14",
-            arch="ViT-L-14",
-            # version="path_to/laion/CLIP-ViT-H-14-laion2B-s32B-b79K/open_clip_pytorch_model.bin",
-            version="laion2B_s32B_b82K",
-            #version="laion2b_s32b_b79k",
+            #arch="ViT-L-14",
+            #version="laion2B_s32B_b82K",
+                #version="path_to/laion/CLIP-ViT-H-14-laion2B-s32B-b79K/open_clip_pytorch_model.bin",
+            arch="ViT-H-14",
+            version="laion2b_s32b_b79k",
             device="cuda",
             max_length=77,
             freeze=True,
@@ -272,7 +272,6 @@ class FrozenOpenCLIPImageEmbedder(AbstractEmbModel):
             init_device=None
     ):
         super().__init__()
-        print(10*"use ViT-L-14")
         model, _, _ = open_clip.create_model_and_transforms(
             arch,
             device=torch.device(default(init_device, "cpu")),
