@@ -239,10 +239,10 @@ lightning:
       every_n_epochs: 1  # every_n_train_steps: 5000, set the same as image_logger batch_frequency
 
   trainer:
-    devices: 1
+    devices: 4
     benchmark: True
     num_sanity_val_steps: 0
     accumulate_grad_batches: 2
     max_epochs: 100
-    strategy: deepspeed_stage_2
+    strategy: ddp #deepspeed_stage_2
     gradient_clip_val: 0.3
