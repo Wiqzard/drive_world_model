@@ -3,19 +3,20 @@ import os
 import random
 from typing import Any, Dict, Optional
 
-from PIL import Image
-from torchvision import transforms
 import h5py
 import numpy as np
 import torch
-from torch.utils.data import Dataset, DataLoader
+from PIL import Image
+from torch.utils.data import DataLoader, Dataset
+from torchvision import transforms
 from torchvision import transforms as T
 
 
 class H5VideoDataset(Dataset):
     def __init__(
         self,
-        data_root: str = "/var/tmp/yoda3/train",
+        # data_root: str = "/var/tmp/yoda3/train",
+        data_root: str = "/store/swissai/a03/datasets/OpenDV-YouTube/h5/train_full",
         target_width=1024,
         target_height=576,
         num_frames=25,
@@ -87,9 +88,7 @@ class H5VideoDataset(Dataset):
             top = (ori_h - tmp_h) // 2
             bottom = (ori_h + tmp_h) // 2
             image = image.crop((0, top, ori_w, bottom))
-        image = image.resize(
-            (self.target_width, self.target_height), resample=Image.LANCZOS
-        )
+        image = image.resize((self.target_width, self.target_height), resample=Image.LANCZOS)
         if not image.mode == "RGB":
             image = image.convert("RGB")
         image = self.img_preprocessor(image)
