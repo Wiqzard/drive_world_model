@@ -815,7 +815,7 @@ if __name__ == "__main__":
         }
 
         print(20 * "#")
-        trainer_opt["num_nodes"] = 1
+        trainer_opt["num_nodes"] = 8
         trainer = Trainer(**trainer_opt, **trainer_kwargs)
 
         trainer.logdir = logdir
