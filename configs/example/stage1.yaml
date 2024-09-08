@@ -10,8 +10,8 @@ data:
     probs:
       - 1
     samples_per_epoch: 256000
-    target_height: &target_height 320 #576
-    target_width: &target_width 448 #576 #448 #1024
+    target_height: &target_height 576 #320 #576
+    target_width: &target_width 1024 #448 #576 #448 #1024
     num_frames: &num_frames 25
 
 lightning:
