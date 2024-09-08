@@ -9,6 +9,7 @@ from torch.utils.checkpoint import checkpoint
 
 from vwm.modules.attention import SpatialTransformer
 from vwm.modules.video_attention import SpatialVideoTransformer
+
 from .util import (
     avg_pool_nd,
     conv_nd,
@@ -242,9 +243,7 @@ class ResBlock(TimestepBlock):
             self.emb_layers = None
             self.exchange_temb_dims = False
         else:
-            self.emb_layers = nn.Sequential(
-                nn.SiLU(), linear(emb_channels, self.emb_out_channels)
-            )
+            self.emb_layers = nn.Sequential(nn.SiLU(), linear(emb_channels, self.emb_out_channels))
 
         self.out_layers = nn.Sequential(
             normalization(self.out_channels),
@@ -282,7 +281,7 @@ class ResBlock(TimestepBlock):
         """
 
         if self.use_checkpoint:
-            return checkpoint(self._forward, x, emb)
+            return checkpoint(self._forward, x, emb, use_reentrant=False)
         else:
             return self._forward(x, emb)
 

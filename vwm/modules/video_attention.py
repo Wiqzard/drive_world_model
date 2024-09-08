@@ -108,7 +108,7 @@ class VideoTransformerBlock(nn.Module):
         self, x: torch.Tensor, context: torch.Tensor = None, timesteps: int = None
     ) -> torch.Tensor:
         if self.use_checkpoint:
-            return checkpoint(self._forward, x, context, timesteps)
+            return checkpoint(self._forward, x, context, timesteps, use_reentrant=False)
         else:
             return self._forward(x, context, timesteps=timesteps)
 

@@ -11,7 +11,7 @@ data:
       - 1
     samples_per_epoch: 256000
     target_height: &target_height 320 #576
-    target_width: &target_width 576 #448 #1024
+    target_width: &target_width 448 #576 #448 #1024
     num_frames: &num_frames 25
 
 lightning:
@@ -40,8 +40,7 @@ lightning:
     num_sanity_val_steps: 0
     accumulate_grad_batches: 2
     max_epochs: 100
-    #accelerator: cpu #ddp
-    strategy: deepspeed_stage_2 # ddp_find_unused_parameters_true #
+    strategy: deepspeed_stage_2  # ddp_find_unused_parameters_true # ddp #deepspeed_stage_2 
     gradient_clip_val: 0.3
 
 model:
@@ -84,7 +83,7 @@ model:
         use_linear_in_transformer: True
         transformer_depth: 1
         context_dim: 1024
-        spatial_transformer_attn_type: softmax-xformers
+        spatial_transformer_attn_type: softmax #-xformers
         extra_ff_mix_layer: True
         use_spatial_context: True
         merge_strategy: learned_with_images
@@ -109,7 +108,7 @@ model:
           #    image_token_dropout_prob: 0.4
           #    no_condition_prob: 0.15
           #    token_dropout_prob: 0.2
-          #    num_condition_tokens: 64 #128
+          #    num_condition_tokens: 4 #16 #64 #128
           #    image_width: *target_width #${..width}
           #    image_height: *target_height #${..height}
           #    condition_frames: [0, 3, 7, 11]
@@ -232,7 +231,7 @@ model:
             in_channels: 3
             out_ch: 3
             ch: 32 #128
-            ch_mult: [1, 2, 2, 4] # [ 1, 2, 4, 4 ]
+            ch_mult: [1, 1, 1, 1] # [ 1, 2, 4, 4 ]
             num_res_blocks: 2
             attn_resolutions: [ ]
             dropout: 0.0

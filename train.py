@@ -630,6 +630,8 @@ if __name__ == "__main__":
         #trainer_config["accelerator"] = "cpu"
         #trainer_config["accelerator"] = "gpu"
         #cpu = True
+        trainer_config["num_nodes"] = 1
+        #trainer_config["devices"] = 2
         ###
         import os
         os.environ['TORCH_DISTRIBUTED_DEBUG'] = 'DETAIL'

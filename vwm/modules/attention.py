@@ -502,7 +502,7 @@ class BasicTransformerBlock(nn.Module):
         if self.use_checkpoint:
             # inputs = {"x": x, "context": context}
             # return checkpoint(self._forward, inputs, self.parameters(), self.use_checkpoint)
-            return checkpoint(self._forward, x, context)
+            return checkpoint(self._forward, x, context, use_reentrant=False)
         else:
             return self._forward(**kwargs)
 
