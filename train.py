@@ -11,12 +11,12 @@ import numpy as np
 import pytorch_lightning as pl
 import torch
 import torchvision
-from PIL import Image
 from einops import rearrange
 from matplotlib import pyplot as plt
 from natsort import natsorted
 from omegaconf import OmegaConf
 from packaging import version
+from PIL import Image
 from pytorch_lightning import seed_everything
 from pytorch_lightning.callbacks import Callback
 from pytorch_lightning.trainer import Trainer
@@ -33,9 +33,7 @@ def default_trainer_args():
     argspec = dict(inspect.signature(Trainer.__init__).parameters)
     argspec.pop("self")
     default_args = {
-        param: argspec[param].default
-        for param in argspec
-        if argspec[param] != Parameter.empty
+        param: argspec[param].default for param in argspec if argspec[param] != Parameter.empty
     }
     return default_args
 
@@ -105,9 +103,7 @@ def get_parser(**parser_kwargs):
         nargs="?",
         help="disable test",
     )
-    parser.add_argument(
-        "-p", "--project", help="name of new or path to existing project"
-    )
+    parser.add_argument("-p", "--project", help="name of new or path to existing project")
     parser.add_argument(
         "-d",
         "--debug",
@@ -117,9 +113,7 @@ def get_parser(**parser_kwargs):
         default=False,
         help="enable post-mortem debugging",
     )
-    parser.add_argument(
-        "-s", "--seed", type=int, default=23, help="seed for seed_everything"
-    )
+    parser.add_argument("-s", "--seed", type=int, default=23, help="seed for seed_everything")
     parser.add_argument(
         "-f", "--postfix", type=str, default="", help="post-postfix for default name"
     )
@@ -165,9 +159,7 @@ def get_parser(**parser_kwargs):
             default=None,
             help="single checkpoint file to resume from",
         )
-    parser.add_argument(
-        "--n_devices", type=int, default=8, help="number of gpus in training"
-    )
+    parser.add_argument("--n_devices", type=int, default=8, help="number of gpus in training")
     parser.add_argument(
         "--finetune",
         type=str,
@@ -256,16 +248,13 @@ class SetupCallback(Callback):
             os.makedirs(self.cfgdir, exist_ok=True)
 
             if "callbacks" in self.lightning_config:
-                if (
-                    "metrics_over_trainsteps_checkpoint"
-                    in self.lightning_config["callbacks"]
-                ):
+                if "metrics_over_trainsteps_checkpoint" in self.lightning_config["callbacks"]:
                     os.makedirs(
                         os.path.join(self.ckptdir, "trainstep_checkpoints"),
                         exist_ok=True,
                     )
-            #print("Project config")
-            #print(OmegaConf.to_yaml(self.config))
+            # print("Project config")
+            # print(OmegaConf.to_yaml(self.config))
             if MULTINODE_HACKS:
                 import time
 
@@ -275,8 +264,8 @@ class SetupCallback(Callback):
                 os.path.join(self.cfgdir, "{}-project.yaml".format(self.now)),
             )
 
-            #print("Lightning config")
-            #print(OmegaConf.to_yaml(self.lightning_config))
+            # print("Lightning config")
+            # print(OmegaConf.to_yaml(self.lightning_config))
             OmegaConf.save(
                 OmegaConf.create({"lightning": self.lightning_config}),
                 os.path.join(self.cfgdir, "{}-lightning.yaml".format(self.now)),
@@ -348,9 +337,7 @@ class ImageLogger(Callback):
                 img_seq = images[log_type]
                 if self.rescale:
                     img_seq = (img_seq + 1.0) / 2.0
-                img_seq = rearrange(
-                    img_seq, "(b t) c h w -> b t h w c", t=self.num_frames
-                )
+                img_seq = rearrange(img_seq, "(b t) c h w -> b t h w c", t=self.num_frames)
                 B, T = img_seq.shape[:2]
                 for b_i in range(B):
                     cur_img_seq = img_seq[b_i].numpy()  # [t h w c]
@@ -398,9 +385,7 @@ class ImageLogger(Callback):
             }
 
             with torch.no_grad(), torch.cuda.amp.autocast(**gpu_autocast_kwargs):
-                images = pl_module.log_images(
-                    batch, split=split, **self.log_images_kwargs
-                )
+                images = pl_module.log_images(batch, split=split, **self.log_images_kwargs)
 
             for log_type in images:
                 if isinstance(images[log_type], torch.Tensor):
@@ -550,12 +535,11 @@ if __name__ == "__main__":
                     cfg_fname = os.path.split(opt.base[0])[-1]
                     cfg_name = os.path.splitext(cfg_fname)[0]
                 else:
-                    assert "configs" in os.path.split(opt.base[0])[0], os.path.split(
-                        opt.base[0]
-                    )[0]
+                    assert "configs" in os.path.split(opt.base[0])[0], os.path.split(opt.base[0])[
+                        0
+                    ]
                     cfg_path = os.path.split(opt.base[0])[0].split(os.sep)[
-                        os.path.split(opt.base[0])[0].split(os.sep).index("configs")
-                        + 1 :
+                        os.path.split(opt.base[0])[0].split(os.sep).index("configs") + 1 :
                     ]  # cut away the first one (we assert all configs are in "configs")
                     cfg_name = os.path.splitext(os.path.split(opt.base[0])[-1])[0]
                     cfg_name = "-".join(cfg_path) + f"-{cfg_name}"
@@ -582,9 +566,7 @@ if __name__ == "__main__":
         print(f"Enabling TF32 for PyTorch {torch.__version__}")
     else:
         print(f"Using default TF32 settings for PyTorch {torch.__version__}:")
-        print(
-            f"torch.backends.cuda.matmul.allow_tf32={torch.backends.cuda.matmul.allow_tf32}"
-        )
+        print(f"torch.backends.cuda.matmul.allow_tf32={torch.backends.cuda.matmul.allow_tf32}")
         print(f"torch.backends.cudnn.allow_tf32={torch.backends.cudnn.allow_tf32}")
 
     try:
@@ -610,9 +592,7 @@ if __name__ == "__main__":
             devices = [str(i) for i in range(n_devices)]
             trainer_config["devices"] = ",".join(devices) + ","
         else:
-            assert (
-                "devices" in trainer_config
-            ), "Must specify either n_devices or devices"
+            assert "devices" in trainer_config, "Must specify either n_devices or devices"
 
         ckpt_resume_path = opt.resume_from_checkpoint
 
@@ -625,17 +605,17 @@ if __name__ == "__main__":
             cpu = False
 
         ###
-        #trainer_config["devices"] = 1
-        #del trainer_config["devices"]
-        #trainer_config["accelerator"] = "cpu"
-        #trainer_config["accelerator"] = "gpu"
-        #cpu = True
-        #trainer_config["num_nodes"] = 1
-        #trainer_config["devices"] = 2
+        # trainer_config["devices"] = 1
+        # del trainer_config["devices"]
+        # trainer_config["accelerator"] = "cpu"
+        # trainer_config["accelerator"] = "gpu"
+        # cpu = True
+        # trainer_config["num_nodes"] = 1
+        # trainer_config["devices"] = 2
         ###
         import os
-        os.environ['TORCH_DISTRIBUTED_DEBUG'] = 'DETAIL'
 
+        os.environ["TORCH_DISTRIBUTED_DEBUG"] = "DETAIL"
 
         trainer_opt = argparse.Namespace(**trainer_config)
         lightning_config.trainer = trainer_config
@@ -644,7 +624,7 @@ if __name__ == "__main__":
         model = instantiate_from_config(config.model)
         a = list(model.parameters())
         b = list(model.named_parameters())
-        #for idx, (name, param) in enumerate(model.named_parameters()):
+        # for idx, (name, param) in enumerate(model.named_parameters()):
         #    print(f"Index: {idx}, Name: {name}, Shape: {param.shape}")
 
         # use pretrained model
@@ -688,9 +668,7 @@ if __name__ == "__main__":
             if len(missing) > 0:
                 if not opt.finetune or not os.path.exists(opt.finetune):
                     model.reinit_ema()
-                missing = [
-                    model_key for model_key in missing if "model_ema" not in model_key
-                ]
+                missing = [model_key for model_key in missing if "model_ema" not in model_key]
                 # print(f"Missing keys: {missing}")
             print(f"Missing keys: {missing}")
             # if len(unexpected) > 0:
@@ -751,9 +729,7 @@ if __name__ == "__main__":
             strategy_cfg = OmegaConf.create()
             default_strategy_config["params"] = {"find_unused_parameters": True}
         strategy_cfg = OmegaConf.merge(default_strategy_config, strategy_cfg)
-        print(
-            f"strategy config: \n ++++++++++++++ \n {strategy_cfg} \n ++++++++++++++ "
-        )
+        print(f"strategy config: \n ++++++++++++++ \n {strategy_cfg} \n ++++++++++++++ ")
         trainer_kwargs["strategy"] = instantiate_from_config(strategy_cfg)
 
         # add callback which sets up log directory
@@ -826,6 +802,9 @@ if __name__ == "__main__":
         trainer_kwargs = {
             key: val for key, val in trainer_kwargs.items() if key not in trainer_opt
         }
+
+        print(20 * "#")
+        trainer_kwargs["num_nodes"] = 1
         trainer = Trainer(**trainer_opt, **trainer_kwargs)
 
         trainer.logdir = logdir
@@ -840,9 +819,7 @@ if __name__ == "__main__":
         print("#### Data #####")
         try:
             for k in data.datasets:
-                print(
-                    f"{k}, {data.datasets[k].__class__.__name__}, {len(data.datasets[k])}"
-                )
+                print(f"{k}, {data.datasets[k].__class__.__name__}, {len(data.datasets[k])}")
         except:
             print("Datasets not yet initialized")
 
