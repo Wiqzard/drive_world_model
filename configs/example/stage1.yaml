@@ -47,7 +47,7 @@ model:
   base_learning_rate: 1.e-5
   target: vwm.models.diffusion.DiffusionEngine
   params:
-    use_ema: True
+    use_ema: False #True
     input_key: img_seq
     scale_factor: 0.18215
     disable_first_stage_autocast: True
