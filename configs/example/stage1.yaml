@@ -51,7 +51,7 @@ lightning:
     num_sanity_val_steps: 0
     accumulate_grad_batches: 2
     max_epochs: 100
-    strategy: ddp_find_unused_parameters_true # ddp #deepspeed_stage_2 
+    strategy: deepspeed_stage_2 #ddp_find_unused_parameters_true # ddp #deepspeed_stage_2 
     gradient_clip_val: 0.3
 
 model:
