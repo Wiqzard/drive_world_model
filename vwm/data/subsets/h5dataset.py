@@ -15,7 +15,7 @@ from torchvision import transforms as T
 class H5VideoDataset(Dataset):
     def __init__(
         self,
-        # data_root: str = "/var/tmp/yoda3/train",
+        #data_root: str = "/var/tmp/yoda3/train",
         data_root: str = "/store/swissai/a03/datasets/OpenDV-YouTube/h5/train_full",
         target_width=1024,
         target_height=576,

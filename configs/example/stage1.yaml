@@ -15,6 +15,16 @@ data:
     num_frames: &num_frames 25
 
 lightning:
+  #logger:
+  #  target: pytorch_lightning.loggers.WandbLogger
+  #  params:
+  #    name: "vista_test"
+  #    project: "vista"
+  #    log_model: True
+  #    save_dir: "./wandb_logs"
+  #    id:   # Optional, to resume a run
+  #    offline: False  # Set to True for offline logging
+
   callbacks:
     image_logger:
       target: train.ImageLogger
@@ -36,18 +46,19 @@ lightning:
   trainer:
     devices: 4
     benchmark: True
+    log_every_n_steps: 10
     #debug: default 
     num_sanity_val_steps: 0
     accumulate_grad_batches: 2
     max_epochs: 100
-    strategy: deepspeed_stage_2  # ddp_find_unused_parameters_true # ddp #deepspeed_stage_2 
+    strategy: ddp_find_unused_parameters_true # ddp #deepspeed_stage_2 
     gradient_clip_val: 0.3
 
 model:
   base_learning_rate: 1.e-5
   target: vwm.models.diffusion.DiffusionEngine
   params:
-    use_ema: False #True
+    use_ema: True
     input_key: img_seq
     scale_factor: 0.18215
     disable_first_stage_autocast: True
@@ -75,10 +86,10 @@ model:
         use_checkpoint: True
         in_channels: 8
         out_channels: 4
-        model_channels: 64 #128 #320
+        model_channels: 320 #64 #128 #320
         attention_resolutions: [ 4, 2, 1 ]
         num_res_blocks: 2
-        channel_mult: [1, 1, 1, 1] #[ 1, 2, 4, 4 ]
+        channel_mult: [ 1, 2, 4, 4 ] # [1, 1, 1, 1] #
         num_head_channels: 64
         use_linear_in_transformer: True
         transformer_depth: 1
@@ -196,7 +207,7 @@ model:
                     resolution: 256
                     in_channels: 3
                     out_ch: 3
-                    ch: 32 #128
+                    ch: 128 # 32 #
                     ch_mult: [ 1, 2, 4, 4 ]
                     num_res_blocks: 2
                     attn_resolutions: [ ]
@@ -230,8 +241,8 @@ model:
             resolution: 256
             in_channels: 3
             out_ch: 3
-            ch: 32 #128
-            ch_mult: [1, 1, 1, 1] # [ 1, 2, 4, 4 ]
+            ch: 128 #32 #128
+            ch_mult:  [ 1, 2, 4, 4 ] #[1, 1, 1, 1] #
             num_res_blocks: 2
             attn_resolutions: [ ]
             dropout: 0.0
@@ -245,8 +256,8 @@ model:
             resolution: 256
             in_channels: 3
             out_ch: 3
-            ch: 32 #128
-            ch_mult: [1, 1, 1, 1] #[ 1, 2, 4, 4 ]
+            ch: 128 #32 #128
+            ch_mult: [ 1, 2, 4, 4 ] # [1, 1, 1, 1] #
             num_res_blocks: 2
             attn_resolutions: [ ]
             dropout: 0.0

@@ -628,7 +628,8 @@ if __name__ == "__main__":
         #    print(f"Index: {idx}, Name: {name}, Shape: {param.shape}")
 
         # use pretrained model
-        if False:  # not opt.resume or opt.finetune:
+        print(19 * "Here")
+        if not opt.resume or opt.finetune:
             if not opt.finetune or not os.path.exists(opt.finetune):
                 default_ckpt = "ckpts/svd_xt.safetensors"
                 print(f"Loading pretrained model from {default_ckpt}")
@@ -686,9 +687,19 @@ if __name__ == "__main__":
                     "name": "testtube",  # hack for sbord fanatics
                     "save_dir": logdir,
                 },
-            }
+            },
+            "wandb": {
+                "target": "pytorch_lightning.loggers.WandbLogger",
+                "params": {
+                    "name": nowname,
+                    "save_dir": logdir,
+                    "project": "drive_wm",
+                    "offline": False,
+                },
+            },
         }
-        default_logger_cfg = default_logger_cfgs["csv"]
+        #default_logger_cfg = default_logger_cfgs["csv"]
+        default_logger_cfg = default_logger_cfgs["wandb"]
         if "logger" in lightning_config:
             logger_cfg = lightning_config.logger
         else:
