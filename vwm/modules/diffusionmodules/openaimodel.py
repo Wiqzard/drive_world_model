@@ -9,7 +9,14 @@ from torch.utils.checkpoint import checkpoint
 
 from vwm.modules.attention import SpatialTransformer
 from vwm.modules.video_attention import SpatialVideoTransformer
-from .util import avg_pool_nd, conv_nd, linear, normalization, timestep_embedding, zero_module
+from .util import (
+    avg_pool_nd,
+    conv_nd,
+    linear,
+    normalization,
+    timestep_embedding,
+    zero_module,
+)
 
 
 class TimestepBlock(nn.Module):
@@ -30,12 +37,12 @@ class TimestepEmbedSequential(nn.Sequential, TimestepBlock):
     """
 
     def forward(
-            self,
-            x: torch.Tensor,
-            emb: torch.Tensor,
-            context: Optional[torch.Tensor] = None,
-            time_context: Optional[int] = None,
-            num_frames: Optional[int] = None
+        self,
+        x: torch.Tensor,
+        emb: torch.Tensor,
+        context: Optional[torch.Tensor] = None,
+        time_context: Optional[int] = None,
+        num_frames: Optional[int] = None,
     ):
         from .video_model import VideoResBlock
 
@@ -63,15 +70,15 @@ class Upsample(nn.Module):
     """
 
     def __init__(
-            self,
-            channels: int,
-            use_conv: bool,
-            dims: int = 2,
-            out_channels: Optional[int] = None,
-            padding: int = 1,
-            third_up: bool = False,
-            kernel_size: int = 3,
-            scale_factor: int = 2
+        self,
+        channels: int,
+        use_conv: bool,
+        dims: int = 2,
+        out_channels: Optional[int] = None,
+        padding: int = 1,
+        third_up: bool = False,
+        kernel_size: int = 3,
+        scale_factor: int = 2,
     ):
         super().__init__()
         self.channels = channels
@@ -81,7 +88,9 @@ class Upsample(nn.Module):
         self.third_up = third_up
         self.scale_factor = scale_factor
         if use_conv:
-            self.conv = conv_nd(dims, self.channels, self.out_channels, kernel_size, padding=padding)
+            self.conv = conv_nd(
+                dims, self.channels, self.out_channels, kernel_size, padding=padding
+            )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         assert x.shape[1] == self.channels
@@ -92,9 +101,9 @@ class Upsample(nn.Module):
                 (
                     t_factor * x.shape[2],
                     x.shape[3] * self.scale_factor,
-                    x.shape[4] * self.scale_factor
+                    x.shape[4] * self.scale_factor,
                 ),
-                mode="nearest"
+                mode="nearest",
             )
         else:
             x = F.interpolate(x, scale_factor=self.scale_factor, mode="nearest")
@@ -113,13 +122,13 @@ class Downsample(nn.Module):
     """
 
     def __init__(
-            self,
-            channels: int,
-            use_conv: bool,
-            dims: int = 2,
-            out_channels: Optional[int] = None,
-            padding: int = 1,
-            third_down: bool = False
+        self,
+        channels: int,
+        use_conv: bool,
+        dims: int = 2,
+        out_channels: Optional[int] = None,
+        padding: int = 1,
+        third_down: bool = False,
     ):
         super().__init__()
         self.channels = channels
@@ -133,7 +142,14 @@ class Downsample(nn.Module):
                 f"Settings are: \n in-chn: {self.channels}, out-chn: {self.out_channels}, "
                 f"kernel-size: 3, stride: {stride}, padding: {padding}"
             )
-            self.op = conv_nd(dims, self.channels, self.out_channels, 3, stride=stride, padding=padding)
+            self.op = conv_nd(
+                dims,
+                self.channels,
+                self.out_channels,
+                3,
+                stride=stride,
+                padding=padding,
+            )
         else:
             assert self.channels == self.out_channels
             self.op = avg_pool_nd(dims, kernel_size=stride, stride=stride)
@@ -161,21 +177,21 @@ class ResBlock(TimestepBlock):
     """
 
     def __init__(
-            self,
-            channels: int,
-            emb_channels: int,
-            dropout: float,
-            out_channels: Optional[int] = None,
-            use_conv: bool = False,
-            use_scale_shift_norm: bool = False,
-            dims: int = 2,
-            use_checkpoint: bool = False,
-            up: bool = False,
-            down: bool = False,
-            kernel_size: int = 3,
-            exchange_temb_dims: bool = False,
-            skip_t_emb: bool = False,
-            causal: bool = False
+        self,
+        channels: int,
+        emb_channels: int,
+        dropout: float,
+        out_channels: Optional[int] = None,
+        use_conv: bool = False,
+        use_scale_shift_norm: bool = False,
+        dims: int = 2,
+        use_checkpoint: bool = False,
+        up: bool = False,
+        down: bool = False,
+        kernel_size: int = 3,
+        exchange_temb_dims: bool = False,
+        skip_t_emb: bool = False,
+        causal: bool = False,
     ):
         super().__init__()
         self.channels = channels
@@ -195,7 +211,14 @@ class ResBlock(TimestepBlock):
         self.in_layers = nn.Sequential(
             normalization(channels),
             nn.SiLU(),
-            conv_nd(dims, channels, self.out_channels, kernel_size, padding=padding, causal=causal)
+            conv_nd(
+                dims,
+                channels,
+                self.out_channels,
+                kernel_size,
+                padding=padding,
+                causal=causal,
+            ),
         )
 
         self.updown = up or down
@@ -220,8 +243,7 @@ class ResBlock(TimestepBlock):
             self.exchange_temb_dims = False
         else:
             self.emb_layers = nn.Sequential(
-                nn.SiLU(),
-                linear(emb_channels, self.emb_out_channels)
+                nn.SiLU(), linear(emb_channels, self.emb_out_channels)
             )
 
         self.out_layers = nn.Sequential(
@@ -229,14 +251,23 @@ class ResBlock(TimestepBlock):
             nn.SiLU(),
             nn.Dropout(p=dropout),
             zero_module(
-                conv_nd(dims, self.out_channels, self.out_channels, kernel_size, padding=padding, causal=causal)
-            )
+                conv_nd(
+                    dims,
+                    self.out_channels,
+                    self.out_channels,
+                    kernel_size,
+                    padding=padding,
+                    causal=causal,
+                )
+            ),
         )
 
         if self.out_channels == channels:
             self.skip_connection = nn.Identity()
         elif use_conv:
-            self.skip_connection = conv_nd(dims, channels, self.out_channels, kernel_size, padding=padding)
+            self.skip_connection = conv_nd(
+                dims, channels, self.out_channels, kernel_size, padding=padding
+            )
         else:
             self.skip_connection = conv_nd(dims, channels, self.out_channels, 1)
 

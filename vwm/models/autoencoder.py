@@ -23,10 +23,10 @@ class AbstractAutoencoder(LightningModule):
     """
 
     def __init__(
-            self,
-            ema_decay: Union[None, float] = None,
-            monitor: Union[None, str] = None,
-            input_key: str = "img"
+        self,
+        ema_decay: Union[None, float] = None,
+        monitor: Union[None, str] = None,
+        input_key: str = "img",
     ):
         super().__init__()
         self.input_key = input_key
@@ -47,7 +47,7 @@ class AbstractAutoencoder(LightningModule):
         elif isinstance(ckpt, str):
             ckpt = {
                 "target": "vwm.modules.checkpoint.CheckpointEngine",
-                "params": {"ckpt_path": ckpt}
+                "params": {"ckpt_path": ckpt},
             }
         engine = instantiate_from_config(ckpt)
         engine(self)
@@ -102,24 +102,24 @@ class AutoencodingEngine(AbstractAutoencoder):
     """
 
     def __init__(
-            self,
-            *args,
-            encoder_config: Dict,
-            decoder_config: Dict,
-            loss_config: Dict,
-            regularizer_config: Dict,
-            optimizer_config: Union[Dict, None] = None,
-            lr_g_factor: float = 1.0,
-            trainable_ae_params: Optional[List[List[str]]] = None,
-            ae_optimizer_args: Optional[List[dict]] = None,
-            trainable_disc_params: Optional[List[List[str]]] = None,
-            disc_optimizer_args: Optional[List[dict]] = None,
-            disc_start_iter: int = 0,
-            diff_boost_factor: float = 3.0,
-            ckpt_engine: Union[None, str, dict] = None,
-            ckpt_path: Optional[str] = None,
-            additional_decode_keys: Optional[List[str]] = None,
-            **kwargs
+        self,
+        *args,
+        encoder_config: Dict,
+        decoder_config: Dict,
+        loss_config: Dict,
+        regularizer_config: Dict,
+        optimizer_config: Union[Dict, None] = None,
+        lr_g_factor: float = 1.0,
+        trainable_ae_params: Optional[List[List[str]]] = None,
+        ae_optimizer_args: Optional[List[dict]] = None,
+        trainable_disc_params: Optional[List[List[str]]] = None,
+        disc_optimizer_args: Optional[List[dict]] = None,
+        disc_start_iter: int = 0,
+        diff_boost_factor: float = 3.0,
+        ckpt_engine: Union[None, str, dict] = None,
+        ckpt_path: Optional[str] = None,
+        additional_decode_keys: Optional[List[str]] = None,
+        **kwargs,
     ):
         super().__init__(*args, **kwargs)
         if version.parse(pl.__version__) >= version.parse("2.0.0"):  # pytorch lightning
@@ -128,7 +128,9 @@ class AutoencodingEngine(AbstractAutoencoder):
         self.encoder: nn.Module = instantiate_from_config(encoder_config)
         self.decoder: nn.Module = instantiate_from_config(decoder_config)
         self.loss: nn.Module = instantiate_from_config(loss_config)
-        self.regularization: AbstractRegularizer = instantiate_from_config(regularizer_config)
+        self.regularization: AbstractRegularizer = instantiate_from_config(
+            regularizer_config
+        )
         self.optimizer_config = default(
             optimizer_config, {"target": "torch.optim.AdamW"}
         )
@@ -139,7 +141,7 @@ class AutoencodingEngine(AbstractAutoencoder):
         if self.trainable_ae_params is not None:
             self.ae_optimizer_args = default(
                 ae_optimizer_args,
-                [dict() for _ in range(len(self.trainable_ae_params))]
+                [dict() for _ in range(len(self.trainable_ae_params))],
             )
             assert len(self.ae_optimizer_args) == len(self.trainable_ae_params)
         else:
@@ -149,7 +151,7 @@ class AutoencodingEngine(AbstractAutoencoder):
         if self.trainable_disc_params is not None:
             self.disc_optimizer_args = default(
                 disc_optimizer_args,
-                [dict() for _ in range(len(self.trainable_disc_params))]
+                [dict() for _ in range(len(self.trainable_disc_params))],
             )
             assert len(self.disc_optimizer_args) == len(self.trainable_disc_params)
         else:
@@ -187,10 +189,7 @@ class AutoencodingEngine(AbstractAutoencoder):
         return self.decoder.get_last_layer()
 
     def encode(
-            self,
-            x: torch.Tensor,
-            return_reg_log: bool = False,
-            unregularized: bool = False
+        self, x: torch.Tensor, return_reg_log: bool = False, unregularized: bool = False
     ) -> Union[torch.Tensor, Tuple[torch.Tensor, dict]]:
         z = self.encoder(x)
         if unregularized:
@@ -207,14 +206,14 @@ class AutoencodingEngine(AbstractAutoencoder):
         return x
 
     def forward(
-            self, x: torch.Tensor, **additional_decode_kwargs
+        self, x: torch.Tensor, **additional_decode_kwargs
     ) -> Tuple[torch.Tensor, torch.Tensor, dict]:
         z, reg_log = self.encode(x, return_reg_log=True)
         dec = self.decode(z, **additional_decode_kwargs)
         return z, dec, reg_log
 
     def inner_training_step(
-            self, batch: dict, batch_idx: int, optimizer_idx: int = 0
+        self, batch: dict, batch_idx: int, optimizer_idx: int = 0
     ) -> torch.Tensor:
         x = self.get_input(batch)
         additional_decode_kwargs = {
@@ -229,7 +228,7 @@ class AutoencodingEngine(AbstractAutoencoder):
                 "last_layer": self.get_last_layer(),
                 "split": "train",
                 "regularization_log": regularization_log,
-                "autoencoder": self
+                "autoencoder": self,
             }
             extra_info = {k: extra_info[k] for k in self.loss.forward_keys}
         else:
@@ -251,7 +250,7 @@ class AutoencodingEngine(AbstractAutoencoder):
                 logger=True,
                 on_step=True,
                 on_epoch=True,
-                sync_dist=False
+                sync_dist=False,
             )
             self.log(
                 "loss",
@@ -259,7 +258,7 @@ class AutoencodingEngine(AbstractAutoencoder):
                 prog_bar=True,
                 logger=False,
                 on_epoch=False,
-                on_step=True
+                on_step=True,
             )
             return ae_loss
         elif optimizer_idx == 1:
@@ -267,11 +266,7 @@ class AutoencodingEngine(AbstractAutoencoder):
             disc_loss, log_dict_disc = self.loss(x, x_reconstruct, **extra_info)
             # discriminator always needs to return a tuple
             self.log_dict(
-                log_dict_disc,
-                prog_bar=False,
-                logger=True,
-                on_step=True,
-                on_epoch=True
+                log_dict_disc, prog_bar=False, logger=True, on_step=True, on_epoch=True
             )
             return disc_loss
         else:
@@ -288,7 +283,9 @@ class AutoencodingEngine(AbstractAutoencoder):
         opt = opts[optimizer_idx]
         opt.zero_grad()
         with opt.toggle_model():
-            loss = self.inner_training_step(batch, batch_idx, optimizer_idx=optimizer_idx)
+            loss = self.inner_training_step(
+                batch, batch_idx, optimizer_idx=optimizer_idx
+            )
             self.manual_backward(loss)
         opt.step()
 
@@ -311,7 +308,7 @@ class AutoencodingEngine(AbstractAutoencoder):
                 "last_layer": self.get_last_layer(),
                 "split": "val" + postfix,
                 "regularization_log": regularization_log,
-                "autoencoder": self
+                "autoencoder": self,
             }
             extra_info = {k: extra_info[k] for k in self.loss.forward_keys}
         else:
@@ -332,16 +329,13 @@ class AutoencodingEngine(AbstractAutoencoder):
         self.log(
             f"val{postfix}/loss/rec",
             log_dict_ae[f"val{postfix}/loss/rec"],
-            sync_dist=True
+            sync_dist=True,
         )
-        self.log_dict(
-            full_log_dict,
-            sync_dist=True
-        )
+        self.log_dict(full_log_dict, sync_dist=True)
         return full_log_dict
 
     def get_param_groups(
-            self, parameter_names: List[List[str]], optimizer_args: List[dict]
+        self, parameter_names: List[List[str]], optimizer_args: List[dict]
     ) -> Tuple[List[Dict[str, Any]], int]:
         groups = list()
         num_params = 0
@@ -378,21 +372,19 @@ class AutoencodingEngine(AbstractAutoencoder):
         opt_ae = self.instantiate_optimizer_from_config(
             ae_params,
             default(self.lr_g_factor, 1.0) * self.learning_rate,
-            self.optimizer_config
+            self.optimizer_config,
         )
         opts = [opt_ae]
         if len(disc_params) > 0:
             opt_disc = self.instantiate_optimizer_from_config(
-                disc_params,
-                self.learning_rate,
-                self.optimizer_config
+                disc_params, self.learning_rate, self.optimizer_config
             )
             opts.append(opt_disc)
         return opts
 
     @torch.no_grad()
     def log_images(
-            self, batch: dict, additional_log_kwargs: Optional[Dict] = None, **kwargs
+        self, batch: dict, additional_log_kwargs: Optional[Dict] = None, **kwargs
     ) -> dict:
         log = dict()
         additional_decode_kwargs = dict()
@@ -408,7 +400,9 @@ class AutoencodingEngine(AbstractAutoencoder):
         diff.clamp_(0, 1.0)
         log["diff"] = 2.0 * diff - 1.0
         # diff_boost shows location of small errors, by boosting their brightness
-        log["diff_boost"] = 2.0 * torch.clamp(self.diff_boost_factor * diff, 0.0, 1.0) - 1
+        log["diff_boost"] = (
+            2.0 * torch.clamp(self.diff_boost_factor * diff, 0.0, 1.0) - 1
+        )
         if hasattr(self.loss, "log_images"):
             log.update(self.loss.log_images(x, x_reconstruct))
         with self.ema_scope():
@@ -417,7 +411,9 @@ class AutoencodingEngine(AbstractAutoencoder):
             diff_ema = 0.5 * torch.abs(torch.clamp(x_reconstruct_ema, -1.0, 1.0) - x)
             diff_ema.clamp_(0, 1.0)
             log["diff_ema"] = 2.0 * diff_ema - 1.0
-            log["diff_boost_ema"] = 2.0 * torch.clamp(self.diff_boost_factor * diff_ema, 0.0, 1.0) - 1
+            log["diff_boost_ema"] = (
+                2.0 * torch.clamp(self.diff_boost_factor * diff_ema, 0.0, 1.0) - 1
+            )
         if additional_log_kwargs:
             additional_decode_kwargs.update(additional_log_kwargs)
             _, x_reconstruct_add, _ = self(x, **additional_decode_kwargs)
@@ -437,24 +433,20 @@ class AutoencodingEngineLegacy(AutoencodingEngine):
         super().__init__(
             encoder_config={
                 "target": "vwm.modules.diffusionmodules.model.Encoder",
-                "params": ddconfig
+                "params": ddconfig,
             },
             decoder_config={
                 "target": "vwm.modules.diffusionmodules.model.Decoder",
-                "params": ddconfig
+                "params": ddconfig,
             },
-            **kwargs
+            **kwargs,
         )
         self.quant_conv = nn.Conv2d(
             (1 + ddconfig["double_z"]) * ddconfig["z_channels"],
             (1 + ddconfig["double_z"]) * embed_dim,
-            1
+            1,
         )
-        self.post_quant_conv = nn.Conv2d(
-            embed_dim,
-            ddconfig["z_channels"],
-            1
-        )
+        self.post_quant_conv = nn.Conv2d(embed_dim, ddconfig["z_channels"], 1)
         self.embed_dim = embed_dim
 
         self.apply_ckpt(default(ckpt_path, ckpt_engine))
@@ -464,7 +456,7 @@ class AutoencodingEngineLegacy(AutoencodingEngine):
         return params
 
     def encode(
-            self, x: torch.Tensor, return_reg_log: bool = False
+        self, x: torch.Tensor, return_reg_log: bool = False
     ) -> Union[torch.Tensor, Tuple[torch.Tensor, dict]]:
         if self.max_batch_size is None:
             z = self.encoder(x)
@@ -475,7 +467,7 @@ class AutoencodingEngineLegacy(AutoencodingEngine):
             n_batches = int(math.ceil(N / bs))
             z = list()
             for i_batch in range(n_batches):
-                z_batch = self.encoder(x[i_batch * bs: (i_batch + 1) * bs])
+                z_batch = self.encoder(x[i_batch * bs : (i_batch + 1) * bs])
                 z_batch = self.quant_conv(z_batch)
                 z.append(z_batch)
             z = torch.cat(z, 0)
@@ -496,7 +488,7 @@ class AutoencodingEngineLegacy(AutoencodingEngine):
             n_batches = int(math.ceil(N / bs))
             dec = list()
             for i_batch in range(n_batches):
-                dec_batch = self.post_quant_conv(z[i_batch * bs: (i_batch + 1) * bs])
+                dec_batch = self.post_quant_conv(z[i_batch * bs : (i_batch + 1) * bs])
                 dec_batch = self.decoder(dec_batch, **decoder_kwargs)
                 dec.append(dec_batch)
             dec = torch.cat(dec, 0)
@@ -511,7 +503,7 @@ class AutoencoderKL(AutoencodingEngineLegacy):
                     "vwm.modules.autoencoding.regularizers.DiagonalGaussianRegularizer"
                 )
             },
-            **kwargs
+            **kwargs,
         )
 
 
@@ -524,5 +516,5 @@ class AutoencoderKLModeOnly(AutoencodingEngineLegacy):
                 ),
                 "params": {"sample": False},
             },
-            **kwargs
+            **kwargs,
         )

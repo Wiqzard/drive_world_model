@@ -20,7 +20,14 @@ class EDMSampling:
 
 
 class DiscreteSampling:
-    def __init__(self, discretization_config, num_idx, do_append_zero=False, flip=True, num_frames=25):
+    def __init__(
+        self,
+        discretization_config,
+        num_idx,
+        do_append_zero=False,
+        flip=True,
+        num_frames=25,
+    ):
         self.num_idx = num_idx
         self.sigmas = instantiate_from_config(discretization_config)(
             num_idx, do_append_zero=do_append_zero, flip=flip

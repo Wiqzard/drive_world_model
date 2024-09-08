@@ -14,12 +14,12 @@ from vwm.util import append_dims, default, instantiate_from_config
 
 class BaseDiffusionSampler:
     def __init__(
-            self,
-            discretization_config: Union[Dict, ListConfig, OmegaConf],
-            num_steps: Union[int, None] = None,
-            guider_config: Union[Dict, ListConfig, OmegaConf, None] = None,
-            verbose: bool = False,
-            device: str = "cuda"
+        self,
+        discretization_config: Union[Dict, ListConfig, OmegaConf],
+        num_steps: Union[int, None] = None,
+        guider_config: Union[Dict, ListConfig, OmegaConf, None] = None,
+        verbose: bool = False,
+        device: str = "cuda",
     ):
         self.num_steps = num_steps
         self.discretization = instantiate_from_config(discretization_config)
@@ -54,7 +54,7 @@ class BaseDiffusionSampler:
             sigma_generator = tqdm(
                 sigma_generator,
                 total=num_sigmas,
-                desc=f"Sampling with {self.__class__.__name__} for {num_sigmas} steps"
+                desc=f"Sampling with {self.__class__.__name__} for {num_sigmas} steps",
             )
         return sigma_generator
 
@@ -68,18 +68,22 @@ class SingleStepDiffusionSampler(BaseDiffusionSampler):
 
 
 class EulerEDMSampler(SingleStepDiffusionSampler):
-    def __init__(self, s_churn=0.0, s_tmin=0.0, s_tmax=float("inf"), s_noise=1.0, *args, **kwargs):
+    def __init__(
+        self, s_churn=0.0, s_tmin=0.0, s_tmax=float("inf"), s_noise=1.0, *args, **kwargs
+    ):
         super().__init__(*args, **kwargs)
         self.s_churn = s_churn
         self.s_tmin = s_tmin
         self.s_tmax = s_tmax
         self.s_noise = s_noise
 
-    def sampler_step(self, sigma, next_sigma, denoiser, x, cond, cond_mask=None, uc=None, gamma=0.0):
+    def sampler_step(
+        self, sigma, next_sigma, denoiser, x, cond, cond_mask=None, uc=None, gamma=0.0
+    ):
         sigma_hat = sigma * (gamma + 1.0)
         if gamma > 0:
             eps = torch.randn_like(x) * self.s_noise
-            x = x + eps * append_dims(sigma_hat ** 2 - sigma ** 2, x.ndim) ** 0.5
+            x = x + eps * append_dims(sigma_hat**2 - sigma**2, x.ndim) ** 0.5
 
         denoised = self.denoise(x, denoiser, sigma_hat, cond, cond_mask, uc)
         d = to_d(x, sigma_hat, denoised)
@@ -89,23 +93,27 @@ class EulerEDMSampler(SingleStepDiffusionSampler):
         return euler_step
 
     def __call__(
-            self,
-            denoiser,
-            x,  # x is randn
-            cond,
-            uc=None,
-            cond_frame=None,
-            cond_mask=None,
-            num_steps=None
+        self,
+        denoiser,
+        x,  # x is randn
+        cond,
+        uc=None,
+        cond_frame=None,
+        cond_mask=None,
+        num_steps=None,
     ):
-        x, s_in, sigmas, num_sigmas, cond, uc = self.prepare_sampling_loop(x, cond, uc, num_steps)
+        x, s_in, sigmas, num_sigmas, cond, uc = self.prepare_sampling_loop(
+            x, cond, uc, num_steps
+        )
         replace_cond_frames = cond_mask is not None and cond_mask.any()
 
         for i in self.get_sigma_gen(num_sigmas):
             if replace_cond_frames:
-                x = x * append_dims(1 - cond_mask, x.ndim) + cond_frame * append_dims(cond_mask, cond_frame.ndim)
+                x = x * append_dims(1 - cond_mask, x.ndim) + cond_frame * append_dims(
+                    cond_mask, cond_frame.ndim
+                )
             gamma = (
-                min(self.s_churn / (num_sigmas - 1), 2 ** 0.5 - 1)
+                min(self.s_churn / (num_sigmas - 1), 2**0.5 - 1)
                 if self.s_tmin <= sigmas[i] <= self.s_tmax
                 else 0.0
             )
@@ -117,8 +125,10 @@ class EulerEDMSampler(SingleStepDiffusionSampler):
                 cond,
                 cond_mask,
                 uc,
-                gamma
+                gamma,
             )
         if replace_cond_frames:
-            x = x * append_dims(1 - cond_mask, x.ndim) + cond_frame * append_dims(cond_mask, cond_frame.ndim)
+            x = x * append_dims(1 - cond_mask, x.ndim) + cond_frame * append_dims(
+                cond_mask, cond_frame.ndim
+            )
         return x

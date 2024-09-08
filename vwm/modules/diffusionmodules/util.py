@@ -58,7 +58,11 @@ def fourier_filter_3d(x, scale, num_frames, d_s=0.25, d_t=0.25):
     for t in range(T):
         for h in range(H):
             for w in range(W):
-                d_square = (d_s / d_t * (2 * t / T - 1)) ** 2 + (2 * h / H - 1) ** 2 + (2 * w / W - 1) ** 2
+                d_square = (
+                    (d_s / d_t * (2 * t / T - 1)) ** 2
+                    + (2 * h / H - 1) ** 2
+                    + (2 * w / W - 1) ** 2
+                )
                 if d_square <= 2 * d_s:
                     mask[..., t, h, w] = scale
 
@@ -75,10 +79,17 @@ def fourier_filter_3d(x, scale, num_frames, d_s=0.25, d_t=0.25):
 
 def make_beta_schedule(schedule, n_timestep, linear_start=1e-4, linear_end=2e-2):
     if schedule == "linear":
-        betas = torch.linspace(linear_start, linear_end, n_timestep, dtype=torch.float64)
+        betas = torch.linspace(
+            linear_start, linear_end, n_timestep, dtype=torch.float64
+        )
         return betas.numpy()
     if schedule == "scaled_linear":
-        betas = torch.linspace(linear_start ** 0.5, linear_end ** 0.5, n_timestep, dtype=torch.float64) ** 2
+        betas = (
+            torch.linspace(
+                linear_start**0.5, linear_end**0.5, n_timestep, dtype=torch.float64
+            )
+            ** 2
+        )
         return betas.numpy()
     else:
         raise NotImplementedError(f"Unknown schedule: {schedule}")
@@ -111,7 +122,7 @@ class CheckpointFunction(torch.autograd.Function):
         ctx.gpu_autocast_kwargs = {
             "enabled": torch.is_autocast_enabled(),
             "dtype": torch.get_autocast_gpu_dtype(),
-            "cache_enabled": torch.is_autocast_cache_enabled()
+            "cache_enabled": torch.is_autocast_cache_enabled(),
         }
         with torch.no_grad():
             output_tensors = ctx.run_function(*ctx.input_tensors)
@@ -130,7 +141,7 @@ class CheckpointFunction(torch.autograd.Function):
             output_tensors,
             ctx.input_tensors + ctx.input_params,
             output_grads,
-            allow_unused=True
+            allow_unused=True,
         )
         del ctx.input_tensors
         del ctx.input_params
@@ -161,7 +172,9 @@ def timestep_embedding(timesteps, dim, max_period=10000, repeat_only=False):
         args = timesteps[:, None].float() * freqs[None]
         embedding = torch.cat((torch.cos(args), torch.sin(args)), dim=-1)
         if dim % 2:
-            embedding = torch.cat((embedding, torch.zeros_like(embedding[:, :1])), dim=-1)
+            embedding = torch.cat(
+                (embedding, torch.zeros_like(embedding[:, :1])), dim=-1
+            )
     return embedding
 
 
@@ -218,13 +231,26 @@ class GroupNorm32(nn.GroupNorm):
 
 class CausalConv3d(nn.Conv3d):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, **kwargs):
-        super().__init__(in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=0)
+        super().__init__(
+            in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=0
+        )
 
         # make causal padding
-        assert isinstance(kernel_size, Iterable) and len(kernel_size) == 3 and kernel_size[-1] == kernel_size[-2]
-        temporal_padding = [kernel_size[0] - 1, 0]  # causal padding on temporal dimension
-        spatial_padding = [kernel_size[-1] // 2] * 4  # keep padding on spatial dimension
-        causal_padding = tuple(spatial_padding + temporal_padding)  # starting from the last dimension
+        assert (
+            isinstance(kernel_size, Iterable)
+            and len(kernel_size) == 3
+            and kernel_size[-1] == kernel_size[-2]
+        )
+        temporal_padding = [
+            kernel_size[0] - 1,
+            0,
+        ]  # causal padding on temporal dimension
+        spatial_padding = [
+            kernel_size[-1] // 2
+        ] * 4  # keep padding on spatial dimension
+        causal_padding = tuple(
+            spatial_padding + temporal_padding
+        )  # starting from the last dimension
         self.causal_padding = causal_padding
 
     def forward(self, x):
@@ -277,22 +303,24 @@ def avg_pool_nd(dims, *args, **kwargs):
 class AlphaBlender(nn.Module):
     strategies = ["learned", "fixed", "learned_with_images"]
 
-    def __init__(
-            self,
-            alpha: float,
-            merge_strategy: str,
-            rearrange_pattern: str
-    ):
+    def __init__(self, alpha: float, merge_strategy: str, rearrange_pattern: str):
         super().__init__()
         self.merge_strategy = merge_strategy
         self.rearrange_pattern = rearrange_pattern
 
-        assert merge_strategy in self.strategies, f"merge_strategy needs to be in {self.strategies}"
+        assert (
+            merge_strategy in self.strategies
+        ), f"merge_strategy needs to be in {self.strategies}"
 
         if self.merge_strategy == "fixed":
             self.register_buffer("mix_factor", torch.Tensor([alpha]))
-        elif self.merge_strategy == "learned" or self.merge_strategy == "learned_with_images":
-            self.register_parameter("mix_factor", torch.nn.Parameter(torch.Tensor([alpha])))
+        elif (
+            self.merge_strategy == "learned"
+            or self.merge_strategy == "learned_with_images"
+        ):
+            self.register_parameter(
+                "mix_factor", torch.nn.Parameter(torch.Tensor([alpha]))
+            )
         else:
             raise ValueError(f"Unknown merge strategy {self.merge_strategy}")
 
@@ -309,10 +337,11 @@ class AlphaBlender(nn.Module):
         return alpha
 
     def forward(
-            self,
-            x_spatial: torch.Tensor,
-            x_temporal: torch.Tensor
+        self, x_spatial: torch.Tensor, x_temporal: torch.Tensor
     ) -> torch.Tensor:
         alpha = self.get_alpha()
-        x = alpha.to(x_spatial.dtype) * x_spatial + (1.0 - alpha).to(x_spatial.dtype) * x_temporal
+        x = (
+            alpha.to(x_spatial.dtype) * x_spatial
+            + (1.0 - alpha).to(x_spatial.dtype) * x_temporal
+        )
         return x

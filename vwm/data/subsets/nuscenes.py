@@ -21,16 +21,27 @@ def resample_complete_samples(samples, increase_factor=5):
     sample_to_add = list()
     if increase_factor > 1:
         for each_sample in samples:
-            if (each_sample["speed"] and each_sample["angle"] and each_sample["z"] > 0
-                    and 0 < each_sample["goal"][0] < 1600 and 0 < each_sample["goal"][1] < 900):
+            if (
+                each_sample["speed"]
+                and each_sample["angle"]
+                and each_sample["z"] > 0
+                and 0 < each_sample["goal"][0] < 1600
+                and 0 < each_sample["goal"][1] < 900
+            ):
                 for _ in range(increase_factor - 1):
                     sample_to_add.append(each_sample)
     return samples + sample_to_add
 
 
 class NuScenesDataset(BaseDataset):
-    def __init__(self, data_root="data/nuscenes", anno_file="annos/nuScenes.json",
-                 target_height=320, target_width=576, num_frames=25):
+    def __init__(
+        self,
+        data_root="data/nuscenes",
+        anno_file="annos/nuScenes.json",
+        target_height=320,
+        target_width=576,
+        num_frames=25,
+    ):
         if not os.path.exists(data_root):
             raise ValueError("Cannot find dataset {}".format(data_root))
         if not os.path.exists(anno_file):
@@ -56,7 +67,7 @@ class NuScenesDataset(BaseDataset):
             "fps_id": torch.tensor([9]),
             "cond_frames_without_noise": image_seq[0],
             "cond_frames": image_seq[0] + cond_aug * torch.randn_like(image_seq[0]),
-            "cond_aug": cond_aug
+            "cond_aug": cond_aug,
         }
         if self.action_mod == 0:
             data_dict["trajectory"] = torch.tensor(sample_dict["traj"][2:])
@@ -71,11 +82,14 @@ class NuScenesDataset(BaseDataset):
                 data_dict["angle"] = torch.tensor(sample_dict["angle"][1:]) / 780
         elif self.action_mod == 3:
             # point might be invalid
-            if sample_dict["z"] > 0 and 0 < sample_dict["goal"][0] < 1600 and 0 < sample_dict["goal"][1] < 900:
-                data_dict["goal"] = torch.tensor([
-                    sample_dict["goal"][0] / 1600,
-                    sample_dict["goal"][1] / 900
-                ])
+            if (
+                sample_dict["z"] > 0
+                and 0 < sample_dict["goal"][0] < 1600
+                and 0 < sample_dict["goal"][1] < 900
+            ):
+                data_dict["goal"] = torch.tensor(
+                    [sample_dict["goal"][0] / 1600, sample_dict["goal"][1] / 900]
+                )
         else:
             raise ValueError
         return data_dict

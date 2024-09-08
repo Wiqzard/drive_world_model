@@ -47,9 +47,9 @@ def is_power_of_two(n):
 def autocast(f, enabled=True):
     def do_autocast(*args, **kwargs):
         with torch.cuda.amp.autocast(
-                enabled=enabled,
-                dtype=torch.get_autocast_gpu_dtype(),
-                cache_enabled=torch.is_autocast_cache_enabled()
+            enabled=enabled,
+            dtype=torch.get_autocast_gpu_dtype(),
+            cache_enabled=torch.is_autocast_cache_enabled(),
         ):
             return f(*args, **kwargs)
 
@@ -184,7 +184,9 @@ def append_dims(x, target_dims):
 
     dims_to_append = target_dims - x.ndim
     if dims_to_append < 0:
-        raise ValueError(f"Input has {x.ndim} dims but target_dims is {target_dims}, which is less")
+        raise ValueError(
+            f"Input has {x.ndim} dims but target_dims is {target_dims}, which is less"
+        )
     return x[(...,) + (None,) * dims_to_append]
 
 
@@ -196,7 +198,7 @@ def get_configs_path() -> str:
     this_dir = os.path.dirname(__file__)
     candidates = (
         os.path.join(this_dir, "configs"),
-        os.path.join(this_dir, "..", "configs")
+        os.path.join(this_dir, "..", "configs"),
     )
     for candidate in candidates:
         candidate = os.path.abspath(candidate)

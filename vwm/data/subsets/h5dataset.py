@@ -25,11 +25,12 @@ class H5VideoDataset(Dataset):
         self.target_width = target_width
         self.num_frames = num_frames
 
-        assert target_height % 64 == 0 and target_width % 64 == 0, "Resize to integer multiple of 64"
-        self.img_preprocessor = transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Lambda(lambda x: x * 2.0 - 1.0)
-        ])
+        assert (
+            target_height % 64 == 0 and target_width % 64 == 0
+        ), "Resize to integer multiple of 64"
+        self.img_preprocessor = transforms.Compose(
+            [transforms.ToTensor(), transforms.Lambda(lambda x: x * 2.0 - 1.0)]
+        )
 
         assert os.path.isdir(self.data_root)
 
@@ -67,13 +68,13 @@ class H5VideoDataset(Dataset):
             "fps_id": torch.tensor([7]),
             "cond_frames_without_noise": image_seq[0],
             "cond_frames": image_seq[0] + cond_aug * torch.randn_like(image_seq[0]),
-            "cond_aug": cond_aug
+            "cond_aug": cond_aug,
         }
         return data_dict
 
     def preprocess_image(self, image):
         # take numpy image
-        #image = Image.open(image_path)
+        # image = Image.open(image_path)
         image = Image.fromarray(image)
         ori_w, ori_h = image.size
         if ori_w / ori_h > self.target_width / self.target_height:
@@ -86,7 +87,9 @@ class H5VideoDataset(Dataset):
             top = (ori_h - tmp_h) // 2
             bottom = (ori_h + tmp_h) // 2
             image = image.crop((0, top, ori_w, bottom))
-        image = image.resize((self.target_width, self.target_height), resample=Image.LANCZOS)
+        image = image.resize(
+            (self.target_width, self.target_height), resample=Image.LANCZOS
+        )
         if not image.mode == "RGB":
             image = image.convert("RGB")
         image = self.img_preprocessor(image)
@@ -106,7 +109,7 @@ class H5VideoDataset(Dataset):
 
         shard = self.shards[shard_idx]
         num_frames = len(shard[idx_in_shard])
-        
+
         start_idx = random.randint(0, num_frames - self.num_frames)
         image_seq = []
         for i in range(self.num_frames):
@@ -141,7 +144,7 @@ class H5VideoDataset(Dataset):
         for i, p in enumerate(file_paths):
             shard_lengths.append(H5VideoDataset._get_num_in_shard(p))
         return shard_lengths
-    
+
 
 if __name__ == "__main__":
     dataset = H5VideoDataset("/var/tmp/yoda3/train")

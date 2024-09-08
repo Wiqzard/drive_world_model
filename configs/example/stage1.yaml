@@ -1,4 +1,49 @@
 # finetune on big dataset with large resolution
+
+data:
+  target: vwm.data.dataset.Sampler
+  params:
+    batch_size: 1
+    num_workers: 16
+    subsets:
+      - H5Video #YouTube
+    probs:
+      - 1
+    samples_per_epoch: 256000
+    target_height: &target_height 320 #576
+    target_width: &target_width 576 #448 #1024
+    num_frames: &num_frames 25
+
+lightning:
+  callbacks:
+    image_logger:
+      target: train.ImageLogger
+      params:
+        num_frames: *num_frames
+        disabled: False
+        enable_autocast: False
+        batch_frequency: 1000
+        increase_log_steps: True
+        log_first_step: False
+        log_images_kwargs:
+          N: *num_frames
+
+  modelcheckpoint:
+    params:
+      every_n_epochs: 1  # 
+      #every_n_train_steps: 5000  # , set the same as image_logger batch_frequency
+
+  trainer:
+    devices: 4
+    benchmark: True
+    #debug: default 
+    num_sanity_val_steps: 0
+    accumulate_grad_batches: 2
+    max_epochs: 100
+    #accelerator: cpu #ddp
+    strategy: deepspeed_stage_2 # ddp_find_unused_parameters_true #
+    gradient_clip_val: 0.3
+
 model:
   base_learning_rate: 1.e-5
   target: vwm.models.diffusion.DiffusionEngine
@@ -8,7 +53,7 @@ model:
     scale_factor: 0.18215
     disable_first_stage_autocast: True
     en_and_decode_n_samples_a_time: 1
-    num_frames: &num_frames 25
+    num_frames: *num_frames  # &num_frames 25
     slow_spatial_layers: True
     train_peft_adapters: False
     replace_cond_frames: &replace_cond_frames True
@@ -38,8 +83,8 @@ model:
         num_head_channels: 64
         use_linear_in_transformer: True
         transformer_depth: 1
-        context_dim: 768 #1024
-        spatial_transformer_attn_type: softmax #-xformers
+        context_dim: 1024
+        spatial_transformer_attn_type: softmax-xformers
         extra_ff_mix_layer: True
         use_spatial_context: True
         merge_strategy: learned_with_images
@@ -51,6 +96,58 @@ model:
       target: vwm.modules.GeneralConditioner
       params:
         emb_models:
+          #- input_key: img_seq
+          #  is_trainable: True
+          #  ucg_rate: 0.15
+          #  target: vwm.modules.encoders.dino_v2_features2.DinoEncoder
+          #  params:
+          #    num_frames: *num_frames
+          #    dino_version: dinov2_vits14
+          #    dino_channels: 384
+          #    proj_channels: 256
+          #    image_dropout_prob: 0.5
+          #    image_token_dropout_prob: 0.4
+          #    no_condition_prob: 0.15
+          #    token_dropout_prob: 0.2
+          #    num_condition_tokens: 64 #128
+          #    image_width: *target_width #${..width}
+          #    image_height: *target_height #${..height}
+          #    condition_frames: [0, 3, 7, 11]
+          #    num_dino_layers: 1
+          #    cage_crop:
+          #      min_w: 0.6
+          #      min_h: 0.3
+          #      max_w: 0.8
+          #      max_h: 0.5
+          #      y_limit: 0.0
+          #- input_key: img_seq
+          #  is_trainable: True
+          #  ucg_rate: 0.15
+          #  target: vwm.modules.encoders.dino_v2_features.DinoEncoder
+          #  params:
+          #    num_frames: *num_frames
+          #    condition_cfg:
+          #      target: vwm.modules.encoders.dino_v2_features.DINOFeaturesProvider
+          #      params:
+          #        dino_version: dinov2_vits14
+          #        dino_channels: 384
+          #        proj_channels: 256
+          #        image_dropout_prob: 0.5
+          #        image_token_dropout_prob: 0.4
+          #        no_condition_prob: 0.15
+          #        token_dropout_prob: 0.2
+          #        num_condition_tokens: 64 #128
+          #        image_width: *target_width #${..width}
+          #        image_height: *target_height #${..height}
+          #        condition_frames: [0, 3, 7, 11]
+          #        num_dino_layers: 1
+          #        cage_crop:
+          #          min_w: 0.6
+          #          min_h: 0.3
+          #          max_w: 0.8
+          #          max_h: 0.5
+          #          y_limit: 0.0
+
           - input_key: cond_frames_without_noise
             is_trainable: False
             ucg_rate: 0.15
@@ -149,8 +246,8 @@ model:
             resolution: 256
             in_channels: 3
             out_ch: 3
-            ch: 128
-            ch_mult: [ 1, 2, 4, 4 ]
+            ch: 32 #128
+            ch_mult: [1, 1, 1, 1] #[ 1, 2, 4, 4 ]
             num_res_blocks: 2
             attn_resolutions: [ ]
             dropout: 0.0
@@ -168,7 +265,7 @@ model:
     loss_fn_config:
       target: vwm.modules.diffusionmodules.loss.StandardDiffusionLoss
       params:
-        use_additional_loss: True
+        use_additional_loss: True #False #True
         offset_noise_level: 0.02
         additional_loss_weight: 0.1
         num_frames: *num_frames
@@ -205,44 +302,3 @@ model:
             num_frames: *num_frames
             max_scale: 3.0
             min_scale: 1.5
-
-data:
-  target: vwm.data.dataset.Sampler
-  params:
-    batch_size: 1
-    num_workers: 16
-    subsets:
-      - H5Video #YouTube
-    probs:
-      - 1
-    samples_per_epoch: 256000
-    target_height: 576
-    target_width: 1024
-    num_frames: *num_frames
-
-lightning:
-  callbacks:
-    image_logger:
-      target: train.ImageLogger
-      params:
-        num_frames: *num_frames
-        disabled: False
-        enable_autocast: False
-        batch_frequency: 1000
-        increase_log_steps: True
-        log_first_step: False
-        log_images_kwargs:
-          N: *num_frames
-
-  modelcheckpoint:
-    params:
-      every_n_epochs: 1  # every_n_train_steps: 5000, set the same as image_logger batch_frequency
-
-  trainer:
-    devices: 4
-    benchmark: True
-    num_sanity_val_steps: 0
-    accumulate_grad_batches: 2
-    max_epochs: 100
-    strategy: ddp #deepspeed_stage_2
-    gradient_clip_val: 0.3

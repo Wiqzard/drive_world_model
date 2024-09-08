@@ -7,14 +7,17 @@ from torchvision import transforms
 
 
 class BaseDataset(Dataset):
-    def __init__(self, data_root, anno_file, target_height=320, target_width=576, num_frames=25):
+    def __init__(
+        self, data_root, anno_file, target_height=320, target_width=576, num_frames=25
+    ):
         self.data_root = data_root
 
-        assert target_height % 64 == 0 and target_width % 64 == 0, "Resize to integer multiple of 64"
-        self.img_preprocessor = transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Lambda(lambda x: x * 2.0 - 1.0)
-        ])
+        assert (
+            target_height % 64 == 0 and target_width % 64 == 0
+        ), "Resize to integer multiple of 64"
+        self.img_preprocessor = transforms.Compose(
+            [transforms.ToTensor(), transforms.Lambda(lambda x: x * 2.0 - 1.0)]
+        )
 
         if isinstance(anno_file, list):
             self.samples = list()
@@ -44,7 +47,9 @@ class BaseDataset(Dataset):
             top = (ori_h - tmp_h) // 2
             bottom = (ori_h + tmp_h) // 2
             image = image.crop((0, top, ori_w, bottom))
-        image = image.resize((self.target_width, self.target_height), resample=Image.LANCZOS)
+        image = image.resize(
+            (self.target_width, self.target_height), resample=Image.LANCZOS
+        )
         if not image.mode == "RGB":
             image = image.convert("RGB")
         image = self.img_preprocessor(image)
@@ -63,7 +68,7 @@ class BaseDataset(Dataset):
             "fps_id": torch.tensor([9]),
             "cond_frames_without_noise": image_seq[0],
             "cond_frames": image_seq[0] + cond_aug * torch.randn_like(image_seq[0]),
-            "cond_aug": cond_aug
+            "cond_aug": cond_aug,
         }
         return data_dict
 

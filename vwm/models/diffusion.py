@@ -18,31 +18,31 @@ from vwm.util import default, disabled_train, get_obj_from_str, instantiate_from
 
 class DiffusionEngine(LightningModule):
     def __init__(
-            self,
-            network_config,
-            denoiser_config,
-            first_stage_config,
-            conditioner_config: Union[None, Dict, ListConfig, OmegaConf] = None,
-            sampler_config: Union[None, Dict, ListConfig, OmegaConf] = None,
-            optimizer_config: Union[None, Dict, ListConfig, OmegaConf] = None,
-            scheduler_config: Union[None, Dict, ListConfig, OmegaConf] = None,
-            loss_fn_config: Union[None, Dict, ListConfig, OmegaConf] = None,
-            network_wrapper: Union[None, str] = None,
-            ckpt_path: Union[None, str] = None,
-            use_ema: bool = False,
-            ema_decay_rate: float = 0.9999,
-            scale_factor: float = 1.0,
-            disable_first_stage_autocast=False,
-            input_key: str = "img",
-            log_keys: Union[List, None] = None,
-            no_cond_log: bool = False,
-            compile_model: bool = False,
-            en_and_decode_n_samples_a_time: int = 14,
-            num_frames: int = 25,
-            slow_spatial_layers: bool = False,
-            train_peft_adapters: bool = False,
-            replace_cond_frames: bool = False,
-            fixed_cond_frames: Union[List, None] = None
+        self,
+        network_config,
+        denoiser_config,
+        first_stage_config,
+        conditioner_config: Union[None, Dict, ListConfig, OmegaConf] = None,
+        sampler_config: Union[None, Dict, ListConfig, OmegaConf] = None,
+        optimizer_config: Union[None, Dict, ListConfig, OmegaConf] = None,
+        scheduler_config: Union[None, Dict, ListConfig, OmegaConf] = None,
+        loss_fn_config: Union[None, Dict, ListConfig, OmegaConf] = None,
+        network_wrapper: Union[None, str] = None,
+        ckpt_path: Union[None, str] = None,
+        use_ema: bool = False,
+        ema_decay_rate: float = 0.9999,
+        scale_factor: float = 1.0,
+        disable_first_stage_autocast=False,
+        input_key: str = "img",
+        log_keys: Union[List, None] = None,
+        no_cond_log: bool = False,
+        compile_model: bool = False,
+        en_and_decode_n_samples_a_time: int = 14,
+        num_frames: int = 25,
+        slow_spatial_layers: bool = False,
+        train_peft_adapters: bool = False,
+        replace_cond_frames: bool = False,
+        fixed_cond_frames: Union[List, None] = None,
     ):
         super().__init__()
         self.log_keys = log_keys
@@ -51,9 +51,7 @@ class DiffusionEngine(LightningModule):
             optimizer_config, {"target": "torch.optim.AdamW"}
         )
         model = instantiate_from_config(network_config)
-        self.model = get_obj_from_str(
-            default(network_wrapper, OPENAIUNETWRAPPER)
-        )(
+        self.model = get_obj_from_str(default(network_wrapper, OPENAIUNETWRAPPER))(
             model, compile_model=compile_model
         )
 
@@ -124,7 +122,9 @@ class DiffusionEngine(LightningModule):
             raise NotImplementedError
 
         missing, unexpected = self.load_state_dict(svd, strict=False)
-        print(f"Restored from {path} with {len(missing)} missing and {len(unexpected)} unexpected keys")
+        print(
+            f"Restored from {path} with {len(missing)} missing and {len(unexpected)} unexpected keys"
+        )
         if len(missing) > 0:
             print(f"Missing keys: {missing}")
         if len(unexpected) > 0:
@@ -143,7 +143,9 @@ class DiffusionEngine(LightningModule):
         input_shape = batch[self.input_key].shape
         if len(input_shape) != 4:  # is an image sequence
             assert input_shape[1] == self.num_frames
-            batch[self.input_key] = rearrange(batch[self.input_key], "b t c h w -> (b t) c h w")
+            batch[self.input_key] = rearrange(
+                batch[self.input_key], "b t c h w -> (b t) c h w"
+            )
         return batch[self.input_key]
 
     @torch.no_grad()
@@ -166,7 +168,9 @@ class DiffusionEngine(LightningModule):
                     if not all_out:
                         all_out.append(out)
                     else:
-                        all_out[-1][-overlap:] = (all_out[-1][-overlap:] + out[:overlap]) / 2
+                        all_out[-1][-overlap:] = (
+                            all_out[-1][-overlap:] + out[:overlap]
+                        ) / 2
                         all_out.append(out[overlap:])
             else:
                 for current_z in z.split(n_samples, dim=0):
@@ -187,7 +191,7 @@ class DiffusionEngine(LightningModule):
         with torch.autocast("cuda", enabled=not self.disable_first_stage_autocast):
             for n in range(n_rounds):
                 out = self.first_stage_model.encode(
-                    x[n * n_samples: (n + 1) * n_samples]
+                    x[n * n_samples : (n + 1) * n_samples]
                 )
                 all_out.append(out)
         z = torch.cat(all_out, dim=0)
@@ -195,7 +199,9 @@ class DiffusionEngine(LightningModule):
         return z
 
     def forward(self, x, batch):
-        loss = self.loss_fn(self.model, self.denoiser, self.conditioner, x, batch)  # go to StandardDiffusionLoss
+        loss = self.loss_fn(
+            self.model, self.denoiser, self.conditioner, x, batch
+        )  # go to StandardDiffusionLoss
         loss_mean = loss.mean()
         loss_dict = {"loss": loss_mean}
         return loss_mean, loss_dict
@@ -210,13 +216,24 @@ class DiffusionEngine(LightningModule):
     def training_step(self, batch, batch_idx):
         loss, loss_dict = self.shared_step(batch)
 
-        self.log_dict(loss_dict, prog_bar=True, logger=True, on_step=True, on_epoch=True)
+        self.log_dict(
+            loss_dict, prog_bar=True, logger=True, on_step=True, on_epoch=True
+        )
 
-        self.log("global_step", self.global_step, prog_bar=True, logger=True, on_step=True, on_epoch=False)
+        self.log(
+            "global_step",
+            self.global_step,
+            prog_bar=True,
+            logger=True,
+            on_step=True,
+            on_epoch=False,
+        )
 
         if self.scheduler_config is not None:
             lr = self.optimizers().param_groups[0]["lr"]
-            self.log("lr_abs", lr, prog_bar=True, logger=True, on_step=True, on_epoch=False)
+            self.log(
+                "lr_abs", lr, prog_bar=True, logger=True, on_step=True, on_epoch=False
+            )
         return loss
 
     # @torch.no_grad()
@@ -227,7 +244,9 @@ class DiffusionEngine(LightningModule):
     @torch.no_grad()
     def test_step(self, batch, batch_idx):
         loss, loss_dict = self.shared_step(batch)
-        self.log_dict(loss_dict, prog_bar=True, logger=True, on_step=True, on_epoch=False)
+        self.log_dict(
+            loss_dict, prog_bar=True, logger=True, on_step=True, on_epoch=False
+        )
 
     def on_train_start(self, *args, **kwargs):
         if self.sampler is None or self.loss_fn is None:
@@ -262,33 +281,35 @@ class DiffusionEngine(LightningModule):
         if self.slow_spatial_layers:
             param_dicts = [
                 {
-                    "params": [p for n, p in self.model.named_parameters() if "time_stack" in n]
+                    "params": [
+                        p for n, p in self.model.named_parameters() if "time_stack" in n
+                    ]
                 },
                 {
-                    "params": [p for n, p in self.model.named_parameters() if "time_stack" not in n],
-                    "lr": lr * 0.1
-                }
+                    "params": [
+                        p
+                        for n, p in self.model.named_parameters()
+                        if "time_stack" not in n
+                    ],
+                    "lr": lr * 0.1,
+                },
             ]
         elif self.train_peft_adapters:
             param_dicts = [
                 {
-                    "params": [p for n, p in self.model.named_parameters() if "adapter" in n]
+                    "params": [
+                        p for n, p in self.model.named_parameters() if "adapter" in n
+                    ]
                 }
             ]
         else:
-            param_dicts = [
-                {
-                    "params": list(self.model.parameters())
-                }
-            ]
+            param_dicts = [{"params": list(self.model.parameters())}]
         for embedder in self.conditioner.embedders:
             if embedder.is_trainable:
-                param_dicts.append(
-                    {
-                        "params": list(embedder.parameters())
-                    }
-                )
-        opt = self.instantiate_optimizer_from_config(param_dicts, lr, self.optimizer_config)
+                param_dicts.append({"params": list(embedder.parameters())})
+        opt = self.instantiate_optimizer_from_config(
+            param_dicts, lr, self.optimizer_config
+        )
         if self.scheduler_config is not None:
             scheduler = instantiate_from_config(self.scheduler_config)
             print("Setting up LambdaLR scheduler...")
@@ -296,7 +317,7 @@ class DiffusionEngine(LightningModule):
                 {
                     "scheduler": LambdaLR(opt, lr_lambda=scheduler.schedule),
                     "interval": "step",
-                    "frequency": 1
+                    "frequency": 1,
                 }
             ]
             return [opt], scheduler
@@ -305,13 +326,13 @@ class DiffusionEngine(LightningModule):
 
     @torch.no_grad()
     def sample(
-            self,
-            cond: Dict,
-            cond_frame=None,
-            uc: Union[Dict, None] = None,
-            N: int = 25,
-            shape: Union[None, Tuple, List] = None,
-            **kwargs
+        self,
+        cond: Dict,
+        cond_frame=None,
+        uc: Union[Dict, None] = None,
+        N: int = 25,
+        shape: Union[None, Tuple, List] = None,
+        **kwargs,
     ):
         randn = torch.randn(N, *shape).to(self.device)
         cond_mask = torch.zeros(N).to(self.device)
@@ -322,7 +343,9 @@ class DiffusionEngine(LightningModule):
             cond_mask[:, cond_indices] = 1
             cond_mask = rearrange(cond_mask, "b t -> (b t)")
 
-        denoiser = lambda input, sigma, c, cond_mask: self.denoiser(self.model, input, sigma, c, cond_mask, **kwargs)
+        denoiser = lambda input, sigma, c, cond_mask: self.denoiser(
+            self.model, input, sigma, c, cond_mask, **kwargs
+        )
         samples = self.sampler(  # go to EulerEDMSampler
             denoiser, randn, cond, uc=uc, cond_frame=cond_frame, cond_mask=cond_mask
         )
@@ -330,14 +353,16 @@ class DiffusionEngine(LightningModule):
 
     @torch.no_grad()
     def log_images(
-            self,
-            batch: Dict,
-            N: int = 25,
-            sample: bool = True,
-            ucg_keys: List[str] = None,
-            **kwargs
+        self,
+        batch: Dict,
+        N: int = 25,
+        sample: bool = True,
+        ucg_keys: List[str] = None,
+        **kwargs,
     ) -> Dict:
-        conditioner_input_keys = [e.input_key for e in self.conditioner.embedders if e.ucg_rate > 0.0]
+        conditioner_input_keys = [
+            e.input_key for e in self.conditioner.embedders if e.ucg_rate > 0.0
+        ]
         if ucg_keys:
             assert all(map(lambda x: x in conditioner_input_keys, ucg_keys)), (
                 "Each defined ucg key for sampling must be in the provided conditioner input keys, "
@@ -353,7 +378,7 @@ class DiffusionEngine(LightningModule):
             batch,
             force_uc_zero_embeddings=ucg_keys
             if len(self.conditioner.embedders) > 0
-            else list()
+            else list(),
         )
 
         sampling_kwargs = dict()

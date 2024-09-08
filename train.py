@@ -59,7 +59,7 @@ def get_parser(**parser_kwargs):
         const=True,
         default="",
         nargs="?",
-        help="postfix for logdir"
+        help="postfix for logdir",
     )
     parser.add_argument(
         "--no_date",
@@ -67,7 +67,7 @@ def get_parser(**parser_kwargs):
         nargs="?",
         const=True,
         default=False,
-        help="if True, skip date generation for logdir and only use naming via opt.base or opt.name (+ opt.postfix, optionally)"
+        help="if True, skip date generation for logdir and only use naming via opt.base or opt.name (+ opt.postfix, optionally)",
     )
     parser.add_argument(
         "-r",
@@ -76,7 +76,7 @@ def get_parser(**parser_kwargs):
         const=True,
         default="",
         nargs="?",
-        help="resume from logdir or checkpoint in logdir"
+        help="resume from logdir or checkpoint in logdir",
     )
     parser.add_argument(
         "-b",
@@ -84,9 +84,9 @@ def get_parser(**parser_kwargs):
         nargs="*",
         metavar="base_config.yaml",
         help="paths to base configs. "
-             "Loaded from left-to-right. "
-             "Parameters can be overwritten or added with command-line options of the form `--key value`",
-        default=list()
+        "Loaded from left-to-right. "
+        "Parameters can be overwritten or added with command-line options of the form `--key value`",
+        default=list(),
     )
     parser.add_argument(
         "-t",
@@ -95,7 +95,7 @@ def get_parser(**parser_kwargs):
         const=True,
         default=True,
         nargs="?",
-        help="train"
+        help="train",
     )
     parser.add_argument(
         "--no_test",
@@ -103,12 +103,10 @@ def get_parser(**parser_kwargs):
         const=True,
         default=True,
         nargs="?",
-        help="disable test"
+        help="disable test",
     )
     parser.add_argument(
-        "-p",
-        "--project",
-        help="name of new or path to existing project"
+        "-p", "--project", help="name of new or path to existing project"
     )
     parser.add_argument(
         "-d",
@@ -117,28 +115,16 @@ def get_parser(**parser_kwargs):
         nargs="?",
         const=True,
         default=False,
-        help="enable post-mortem debugging"
+        help="enable post-mortem debugging",
     )
     parser.add_argument(
-        "-s",
-        "--seed",
-        type=int,
-        default=23,
-        help="seed for seed_everything"
+        "-s", "--seed", type=int, default=23, help="seed for seed_everything"
     )
     parser.add_argument(
-        "-f",
-        "--postfix",
-        type=str,
-        default="",
-        help="post-postfix for default name"
+        "-f", "--postfix", type=str, default="", help="post-postfix for default name"
     )
     parser.add_argument(
-        "-l",
-        "--logdir",
-        type=str,
-        default="logs",
-        help="directory for logging data"
+        "-l", "--logdir", type=str, default="logs", help="directory for logging data"
     )
     parser.add_argument(
         "--scale_lr",
@@ -146,7 +132,7 @@ def get_parser(**parser_kwargs):
         nargs="?",
         const=True,
         default=False,
-        help="scale base-lr by ngpu * batch_size * n_accumulate"
+        help="scale base-lr by ngpu * batch_size * n_accumulate",
     )
     parser.add_argument(
         "--legacy_naming",
@@ -154,7 +140,7 @@ def get_parser(**parser_kwargs):
         nargs="?",
         const=True,
         default=False,
-        help="name run based on config file name if true, else by whole path"
+        help="name run based on config file name if true, else by whole path",
     )
     parser.add_argument(
         "--enable_tf32",
@@ -162,7 +148,7 @@ def get_parser(**parser_kwargs):
         nargs="?",
         const=True,
         default=False,
-        help="enables the TensorFloat32 format both for matmuls and cuDNN for pytorch 1.12"
+        help="enables the TensorFloat32 format both for matmuls and cuDNN for pytorch 1.12",
     )
     parser.add_argument(
         "--no_base_name",
@@ -170,26 +156,23 @@ def get_parser(**parser_kwargs):
         nargs="?",
         const=True,
         default=False,
-        help="no config name"
+        help="no config name",
     )
     if version.parse(pl.__version__) >= version.parse("2.0.0"):
         parser.add_argument(
             "--resume_from_checkpoint",
             type=str,
             default=None,
-            help="single checkpoint file to resume from"
+            help="single checkpoint file to resume from",
         )
     parser.add_argument(
-        "--n_devices",
-        type=int,
-        default=8,
-        help="number of gpus in training"
+        "--n_devices", type=int, default=8, help="number of gpus in training"
     )
     parser.add_argument(
         "--finetune",
         type=str,
         default="ckpts/pytorch_model.bin",
-        help="path to checkpoint to finetune from"
+        help="path to checkpoint to finetune from",
     )
     default_args = default_trainer_args()
     for key in default_args:
@@ -233,16 +216,16 @@ def save_img_seq_to_video(out_path, img_seq, fps):
 
 class SetupCallback(Callback):
     def __init__(
-            self,
-            resume,
-            now,
-            logdir,
-            ckptdir,
-            cfgdir,
-            config,
-            lightning_config,
-            debug,
-            ckpt_name=None
+        self,
+        resume,
+        now,
+        logdir,
+        ckptdir,
+        cfgdir,
+        config,
+        lightning_config,
+        debug,
+        ckpt_name=None,
     ):
         super().__init__()
         self.resume = resume
@@ -273,27 +256,30 @@ class SetupCallback(Callback):
             os.makedirs(self.cfgdir, exist_ok=True)
 
             if "callbacks" in self.lightning_config:
-                if "metrics_over_trainsteps_checkpoint" in self.lightning_config["callbacks"]:
+                if (
+                    "metrics_over_trainsteps_checkpoint"
+                    in self.lightning_config["callbacks"]
+                ):
                     os.makedirs(
                         os.path.join(self.ckptdir, "trainstep_checkpoints"),
-                        exist_ok=True
+                        exist_ok=True,
                     )
-            print("Project config")
-            print(OmegaConf.to_yaml(self.config))
+            #print("Project config")
+            #print(OmegaConf.to_yaml(self.config))
             if MULTINODE_HACKS:
                 import time
 
                 time.sleep(5)
             OmegaConf.save(
                 self.config,
-                os.path.join(self.cfgdir, "{}-project.yaml".format(self.now))
+                os.path.join(self.cfgdir, "{}-project.yaml".format(self.now)),
             )
 
-            print("Lightning config")
-            print(OmegaConf.to_yaml(self.lightning_config))
+            #print("Lightning config")
+            #print(OmegaConf.to_yaml(self.lightning_config))
             OmegaConf.save(
                 OmegaConf.create({"lightning": self.lightning_config}),
-                os.path.join(self.cfgdir, "{}-lightning.yaml".format(self.now))
+                os.path.join(self.cfgdir, "{}-lightning.yaml".format(self.now)),
             )
         else:
             # ModelCheckpoint callback created log directory, remove it
@@ -309,24 +295,24 @@ class SetupCallback(Callback):
 
 class ImageLogger(Callback):
     def __init__(
-            self,
-            batch_frequency,
-            clamp=True,
-            increase_log_steps=True,
-            rescale=True,
-            disabled=False,
-            log_on_batch_idx=False,
-            log_first_step=False,
-            log_images_kwargs=None,
-            log_before_first_step=False,
-            enable_autocast=True,
-            num_frames=25
+        self,
+        batch_frequency,
+        clamp=True,
+        increase_log_steps=True,
+        rescale=True,
+        disabled=False,
+        log_on_batch_idx=False,
+        log_first_step=False,
+        log_images_kwargs=None,
+        log_before_first_step=False,
+        enable_autocast=True,
+        num_frames=25,
     ):
         super().__init__()
         self.enable_autocast = enable_autocast
         self.rescale = rescale
         self.batch_freq = batch_frequency
-        self.log_steps = [2 ** n for n in range(int(np.log2(self.batch_freq)) + 1)]
+        self.log_steps = [2**n for n in range(int(np.log2(self.batch_freq)) + 1)]
         if not increase_log_steps:
             self.log_steps = [self.batch_freq]
         self.clamp = clamp
@@ -338,15 +324,7 @@ class ImageLogger(Callback):
         self.num_frames = num_frames
 
     @rank_zero_only
-    def log_local(
-            self,
-            save_dir,
-            split,
-            images,
-            global_step,
-            current_epoch,
-            batch_idx
-    ):
+    def log_local(self, save_dir, split, images, global_step, current_epoch, batch_idx):
         root = os.path.join(save_dir, "images", split)
         for log_type in images:
             if isheatmap(images[log_type]):
@@ -370,7 +348,9 @@ class ImageLogger(Callback):
                 img_seq = images[log_type]
                 if self.rescale:
                     img_seq = (img_seq + 1.0) / 2.0
-                img_seq = rearrange(img_seq, "(b t) c h w -> b t h w c", t=self.num_frames)
+                img_seq = rearrange(
+                    img_seq, "(b t) c h w -> b t h w c", t=self.num_frames
+                )
                 B, T = img_seq.shape[:2]
                 for b_i in range(B):
                     cur_img_seq = img_seq[b_i].numpy()  # [t h w c]
@@ -378,9 +358,13 @@ class ImageLogger(Callback):
                     filename = "{}_epoch{:02}_batch{:04}_step{:06}.mp4".format(
                         log_type, current_epoch, batch_idx, global_step
                     )
-                    save_img_seq_to_video(os.path.join(root, log_type, filename), cur_img_seq, fps=10)
+                    save_img_seq_to_video(
+                        os.path.join(root, log_type, filename), cur_img_seq, fps=10
+                    )
             else:
-                grid = torchvision.utils.make_grid(images[log_type], nrow=int(images[log_type].shape[0] ** 0.5))
+                grid = torchvision.utils.make_grid(
+                    images[log_type], nrow=int(images[log_type].shape[0] ** 0.5)
+                )
                 if self.rescale:
                     grid = (grid + 1.0) / 2.0  # -1,1 -> 0,1; c,h,w
                 grid = grid.transpose(0, 1).transpose(1, 2).squeeze(-1)
@@ -399,9 +383,9 @@ class ImageLogger(Callback):
     def log_img(self, pl_module, batch, batch_idx, split="train"):
         check_idx = batch_idx if self.log_on_batch_idx else pl_module.global_step
         if (
-                self.check_frequency(check_idx)
-                and hasattr(pl_module, "log_images")  # batch_idx % self.batch_freq == 0
-                and callable(pl_module.log_images)
+            self.check_frequency(check_idx)
+            and hasattr(pl_module, "log_images")  # batch_idx % self.batch_freq == 0
+            and callable(pl_module.log_images)
         ) or split == "test":
             is_train = pl_module.training
             if is_train:
@@ -410,11 +394,13 @@ class ImageLogger(Callback):
             gpu_autocast_kwargs = {
                 "enabled": self.enable_autocast,  # torch.is_autocast_enabled(),
                 "dtype": torch.get_autocast_gpu_dtype(),
-                "cache_enabled": torch.is_autocast_cache_enabled()
+                "cache_enabled": torch.is_autocast_cache_enabled(),
             }
 
             with torch.no_grad(), torch.cuda.amp.autocast(**gpu_autocast_kwargs):
-                images = pl_module.log_images(batch, split=split, **self.log_images_kwargs)
+                images = pl_module.log_images(
+                    batch, split=split, **self.log_images_kwargs
+                )
 
             for log_type in images:
                 if isinstance(images[log_type], torch.Tensor):
@@ -428,14 +414,16 @@ class ImageLogger(Callback):
                 images,
                 pl_module.global_step,
                 pl_module.current_epoch,
-                batch_idx
+                batch_idx,
             )
 
             if is_train:
                 pl_module.train()
 
     def check_frequency(self, check_idx):
-        if (check_idx % self.batch_freq == 0 or check_idx in self.log_steps) and (check_idx > 0 or self.log_first_step):
+        if (check_idx % self.batch_freq == 0 or check_idx in self.log_steps) and (
+            check_idx > 0 or self.log_first_step
+        ):
             try:
                 self.log_steps.pop(0)
             except IndexError as e:
@@ -457,7 +445,9 @@ class ImageLogger(Callback):
             self.log_img(pl_module, batch, batch_idx, split="train")
 
     @rank_zero_only
-    def on_validation_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, *args, **kwargs):
+    def on_validation_batch_end(
+        self, trainer, pl_module, outputs, batch, batch_idx, *args, **kwargs
+    ):
         if not self.disabled and pl_module.global_step > 0:
             self.log_img(pl_module, batch, batch_idx, split="val")
 
@@ -564,9 +554,9 @@ if __name__ == "__main__":
                         opt.base[0]
                     )[0]
                     cfg_path = os.path.split(opt.base[0])[0].split(os.sep)[
-                               os.path.split(opt.base[0])[0].split(os.sep).index("configs")
-                               + 1:
-                               ]  # cut away the first one (we assert all configs are in "configs")
+                        os.path.split(opt.base[0])[0].split(os.sep).index("configs")
+                        + 1 :
+                    ]  # cut away the first one (we assert all configs are in "configs")
                     cfg_name = os.path.splitext(os.path.split(opt.base[0])[-1])[0]
                     cfg_name = "-".join(cfg_path) + f"-{cfg_name}"
                 name = "_" + cfg_name
@@ -592,7 +582,9 @@ if __name__ == "__main__":
         print(f"Enabling TF32 for PyTorch {torch.__version__}")
     else:
         print(f"Using default TF32 settings for PyTorch {torch.__version__}:")
-        print(f"torch.backends.cuda.matmul.allow_tf32={torch.backends.cuda.matmul.allow_tf32}")
+        print(
+            f"torch.backends.cuda.matmul.allow_tf32={torch.backends.cuda.matmul.allow_tf32}"
+        )
         print(f"torch.backends.cudnn.allow_tf32={torch.backends.cudnn.allow_tf32}")
 
     try:
@@ -618,7 +610,9 @@ if __name__ == "__main__":
             devices = [str(i) for i in range(n_devices)]
             trainer_config["devices"] = ",".join(devices) + ","
         else:
-            assert "devices" in trainer_config, "Must specify either n_devices or devices"
+            assert (
+                "devices" in trainer_config
+            ), "Must specify either n_devices or devices"
 
         ckpt_resume_path = opt.resume_from_checkpoint
 
@@ -629,20 +623,38 @@ if __name__ == "__main__":
             gpuinfo = trainer_config["devices"]
             print(f"Running on GPUs {gpuinfo}")
             cpu = False
+
+        ###
+        #trainer_config["devices"] = 1
+        #del trainer_config["devices"]
+        #trainer_config["accelerator"] = "cpu"
+        #trainer_config["accelerator"] = "gpu"
+        #cpu = True
+        ###
+        import os
+        os.environ['TORCH_DISTRIBUTED_DEBUG'] = 'DETAIL'
+
+
         trainer_opt = argparse.Namespace(**trainer_config)
         lightning_config.trainer = trainer_config
 
         # model
         model = instantiate_from_config(config.model)
+        a = list(model.parameters())
+        b = list(model.named_parameters())
+        #for idx, (name, param) in enumerate(model.named_parameters()):
+        #    print(f"Index: {idx}, Name: {name}, Shape: {param.shape}")
 
         # use pretrained model
-        if False: #not opt.resume or opt.finetune:
+        if False:  # not opt.resume or opt.finetune:
             if not opt.finetune or not os.path.exists(opt.finetune):
                 default_ckpt = "ckpts/svd_xt.safetensors"
                 print(f"Loading pretrained model from {default_ckpt}")
                 svd = load_safetensors(default_ckpt)
                 for k in list(svd.keys()):
-                    if "time_embed" in k:  # duplicate a new timestep embedding from the pretrained weights
+                    if (
+                        "time_embed" in k
+                    ):  # duplicate a new timestep embedding from the pretrained weights
                         svd[k.replace("time_embed", "cond_time_stack_embed")] = svd[k]
             else:
                 ckpt_path = opt.finetune
@@ -663,7 +675,9 @@ if __name__ == "__main__":
 
             # avoid empty weights when resuming from EMA weights
             for miss_k in missing:
-                ema_name = miss_k.replace(".", "").replace("modeldiffusion_model", "model_ema.diffusion_model")
+                ema_name = miss_k.replace(".", "").replace(
+                    "modeldiffusion_model", "model_ema.diffusion_model"
+                )
                 if ema_name in svd:
                     svd[miss_k] = svd[ema_name]
                     print("Fill", miss_k, "with", ema_name)
@@ -672,7 +686,9 @@ if __name__ == "__main__":
             if len(missing) > 0:
                 if not opt.finetune or not os.path.exists(opt.finetune):
                     model.reinit_ema()
-                missing = [model_key for model_key in missing if "model_ema" not in model_key]
+                missing = [
+                    model_key for model_key in missing if "model_ema" not in model_key
+                ]
                 # print(f"Missing keys: {missing}")
             print(f"Missing keys: {missing}")
             # if len(unexpected) > 0:
@@ -688,8 +704,8 @@ if __name__ == "__main__":
                 "target": "pytorch_lightning.loggers.CSVLogger",
                 "params": {
                     "name": "testtube",  # hack for sbord fanatics
-                    "save_dir": logdir
-                }
+                    "save_dir": logdir,
+                },
             }
         }
         default_logger_cfg = default_logger_cfgs["csv"]
@@ -708,8 +724,8 @@ if __name__ == "__main__":
                 "filename": "{epoch:02}",
                 "verbose": True,
                 "save_last": True,
-                "save_top_k": -1
-            }
+                "save_top_k": -1,
+            },
         }
         # if hasattr(model, "monitor"):
         #     print(f"Monitoring {model.monitor} as checkpoint metric")
@@ -731,9 +747,7 @@ if __name__ == "__main__":
             strategy_cfg = lightning_config.strategy
         else:
             strategy_cfg = OmegaConf.create()
-            default_strategy_config["params"] = {
-                "find_unused_parameters": True
-            }
+            default_strategy_config["params"] = {"find_unused_parameters": True}
         strategy_cfg = OmegaConf.merge(default_strategy_config, strategy_cfg)
         print(
             f"strategy config: \n ++++++++++++++ \n {strategy_cfg} \n ++++++++++++++ "
@@ -753,22 +767,17 @@ if __name__ == "__main__":
                     "config": config,
                     "lightning_config": lightning_config,
                     "debug": opt.debug,
-                    "ckpt_name": melk_ckpt_name
-                }
+                    "ckpt_name": melk_ckpt_name,
+                },
             },
             "image_logger": {
                 "target": "train.ImageLogger",
-                "params": {
-                    "batch_frequency": 1000,
-                    "clamp": True
-                }
+                "params": {"batch_frequency": 1000, "clamp": True},
             },
             "learning_rate_logger": {
                 "target": "pytorch_lightning.callbacks.LearningRateMonitor",
-                "params": {
-                    "logging_interval": "step"
-                }
-            }
+                "params": {"logging_interval": "step"},
+            },
         }
         if version.parse(pl.__version__) >= version.parse("1.4.0"):
             default_callbacks_cfg.update({"checkpoint_callback": modelckpt_cfg})
@@ -841,7 +850,7 @@ if __name__ == "__main__":
         else:
             bs, base_lr = (
                 config.data.params.train.loader.batch_size,
-                config.model.base_learning_rate
+                config.model.base_learning_rate,
             )
         if cpu:
             ngpu = 1
@@ -866,7 +875,6 @@ if __name__ == "__main__":
             print("++++ NOT USING LR SCALING ++++")
             print(f"Setting learning rate to {model.learning_rate:.2e}")
 
-
         # allow checkpointing via USR1
         def melk(*args, **kwargs):
             # run all checkpoint hooks
@@ -879,12 +887,11 @@ if __name__ == "__main__":
                 # trainer.save_checkpoint(ckpt_path)
                 print("Exiting")
 
-
         def divein(*args, **kwargs):
             if trainer.global_rank == 0:
                 import pudb
-                pudb.set_trace()
 
+                pudb.set_trace()
 
         import signal
 

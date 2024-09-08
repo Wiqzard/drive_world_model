@@ -67,7 +67,9 @@ def load_model_from_config(config, ckpt=None):
         elif ckpt.endswith("safetensors"):
             svd = load_safetensors(ckpt)
         else:
-            raise NotImplementedError("Please convert the checkpoint to safetensors first")
+            raise NotImplementedError(
+                "Please convert the checkpoint to safetensors first"
+            )
 
         missing, unexpected = model.load_state_dict(svd, strict=False)
         if len(missing) > 0:
@@ -107,7 +109,9 @@ def perform_save_locally(save_path, samples, mode, dataset_name, sample_index):
                 sample = 255.0 * (sample + 1.0) / 2.0
             else:
                 sample = 255.0 * sample
-            image_save_path = os.path.join(merged_path, f"{dataset_name}_{sample_index:06}_{frame_count:04}.png")
+            image_save_path = os.path.join(
+                merged_path, f"{dataset_name}_{sample_index:06}_{frame_count:04}.png"
+            )
             # if os.path.exists(image_save_path):
             #     return
             Image.fromarray(sample.astype(np.uint8)).save(image_save_path)
@@ -119,7 +123,9 @@ def perform_save_locally(save_path, samples, mode, dataset_name, sample_index):
             grid = 255.0 * (grid + 1.0) / 2.0
         else:
             grid = 255.0 * grid
-        grid_save_path = os.path.join(merged_path, f"{dataset_name}_{sample_index:06}.png")
+        grid_save_path = os.path.join(
+            merged_path, f"{dataset_name}_{sample_index:06}.png"
+        )
         # if os.path.exists(grid_save_path):
         #     return
         Image.fromarray(grid.astype(np.uint8)).save(grid_save_path)
@@ -129,7 +135,9 @@ def perform_save_locally(save_path, samples, mode, dataset_name, sample_index):
             img_seq = 255.0 * (img_seq + 1.0) / 2.0
         else:
             img_seq = 255.0 * img_seq
-        video_save_path = os.path.join(merged_path, f"{dataset_name}_{sample_index:06}.mp4")
+        video_save_path = os.path.join(
+            merged_path, f"{dataset_name}_{sample_index:06}.mp4"
+        )
         # if os.path.exists(video_save_path):
         #     return
         save_img_seq_to_video(video_save_path, img_seq.astype(np.uint8), 10)
@@ -137,8 +145,14 @@ def perform_save_locally(save_path, samples, mode, dataset_name, sample_index):
         raise NotImplementedError
 
 
-def init_sampling(sampler="EulerEDMSampler", guider="VanillaCFG", discretization="EDMDiscretization",
-                  steps=50, cfg_scale=2.5, num_frames=25):
+def init_sampling(
+    sampler="EulerEDMSampler",
+    guider="VanillaCFG",
+    discretization="EDMDiscretization",
+    steps=50,
+    cfg_scale=2.5,
+    num_frames=25,
+):
     discretization_config = get_discretization(discretization)
     guider_config = get_guider(guider, cfg_scale, num_frames)
     sampler = get_sampler(sampler, steps, discretization_config, guider_config)
@@ -153,11 +167,7 @@ def get_discretization(discretization):
     elif discretization == "EDMDiscretization":
         discretization_config = {
             "target": "vwm.modules.diffusionmodules.discretizer.EDMDiscretization",
-            "params": {
-                "sigma_min": 0.002,
-                "sigma_max": 700.0,
-                "rho": 7.0
-            }
+            "params": {"sigma_min": 0.002, "sigma_max": 700.0, "rho": 7.0},
         }
     else:
         raise NotImplementedError
@@ -174,9 +184,7 @@ def get_guider(guider="LinearPredictionGuider", cfg_scale=2.5, num_frames=25):
 
         guider_config = {
             "target": "vwm.modules.diffusionmodules.guiders.VanillaCFG",
-            "params": {
-                "scale": scale
-            }
+            "params": {"scale": scale},
         }
     elif guider == "LinearPredictionGuider":
         max_scale = cfg_scale
@@ -187,8 +195,8 @@ def get_guider(guider="LinearPredictionGuider", cfg_scale=2.5, num_frames=25):
             "params": {
                 "max_scale": max_scale,
                 "min_scale": min_scale,
-                "num_frames": num_frames
-            }
+                "num_frames": num_frames,
+            },
         }
     elif guider == "TrianglePredictionGuider":
         max_scale = cfg_scale
@@ -199,8 +207,8 @@ def get_guider(guider="LinearPredictionGuider", cfg_scale=2.5, num_frames=25):
             "params": {
                 "max_scale": max_scale,
                 "min_scale": min_scale,
-                "num_frames": num_frames
-            }
+                "num_frames": num_frames,
+            },
         }
     else:
         raise NotImplementedError
@@ -222,7 +230,7 @@ def get_sampler(sampler, steps, discretization_config, guider_config):
             s_tmin=s_tmin,
             s_tmax=s_tmax,
             s_noise=s_noise,
-            verbose=False
+            verbose=False,
         )
     else:
         raise ValueError(f"Unknown sampler {sampler}")
@@ -237,9 +245,13 @@ def get_batch(keys, value_dict, N: Union[List, ListConfig], device="cuda"):
     for key in keys:
         if key in value_dict:
             if key in ["fps", "fps_id", "motion_bucket_id", "cond_aug"]:
-                batch[key] = repeat(torch.tensor([value_dict[key]]).to(device), "1 -> b", b=math.prod(N))
+                batch[key] = repeat(
+                    torch.tensor([value_dict[key]]).to(device), "1 -> b", b=math.prod(N)
+                )
             elif key in ["command", "trajectory", "speed", "angle", "goal"]:
-                batch[key] = repeat(value_dict[key][None].to(device), "1 ... -> b ...", b=N[0])
+                batch[key] = repeat(
+                    value_dict[key][None].to(device), "1 ... -> b ...", b=N[0]
+                )
             elif key in ["cond_frames", "cond_frames_without_noise"]:
                 batch[key] = repeat(value_dict[key], "1 ... -> b ...", b=N[0])
             else:
@@ -257,12 +269,10 @@ def get_condition(model, value_dict, num_samples, force_uc_zero_embeddings, devi
     batch, batch_uc = get_batch(
         list(set([x.input_key for x in model.conditioner.embedders])),
         value_dict,
-        [num_samples]
+        [num_samples],
     )
     c, uc = model.conditioner.get_unconditional_conditioning(
-        batch,
-        batch_uc=batch_uc,
-        force_uc_zero_embeddings=force_uc_zero_embeddings
+        batch, batch_uc=batch_uc, force_uc_zero_embeddings=force_uc_zero_embeddings
     )
     unload_model(model.conditioner)
 
@@ -284,15 +294,15 @@ def fill_latent(cond, length, cond_indices, device):
 
 @torch.no_grad()
 def do_sample(
-        images,
-        model,
-        sampler,
-        value_dict,
-        num_rounds,
-        num_frames,
-        force_uc_zero_embeddings: Optional[List] = None,
-        initial_cond_indices: Optional[List] = None,
-        device="cuda"
+    images,
+    model,
+    sampler,
+    value_dict,
+    num_rounds,
+    num_frames,
+    force_uc_zero_embeddings: Optional[List] = None,
+    initial_cond_indices: Optional[List] = None,
+    device="cuda",
 ):
     if initial_cond_indices is None:
         initial_cond_indices = [0]
@@ -301,13 +311,17 @@ def do_sample(
     precision_scope = autocast
 
     with torch.no_grad(), precision_scope(device), model.ema_scope("Sampling"):
-        c, uc = get_condition(model, value_dict, num_frames, force_uc_zero_embeddings, device)
+        c, uc = get_condition(
+            model, value_dict, num_frames, force_uc_zero_embeddings, device
+        )
 
         load_model(model.first_stage_model)
         z = model.encode_first_stage(images)
         unload_model(model.first_stage_model)
 
-        samples_z = torch.zeros((num_rounds * (num_frames - 3) + 3, *z.shape[1:])).to(device)
+        samples_z = torch.zeros((num_rounds * (num_frames - 3) + 3, *z.shape[1:])).to(
+            device
+        )
 
         sampling_progress = tqdm(total=num_rounds, desc="Dreaming")
 
@@ -329,7 +343,7 @@ def do_sample(
             cond=c,
             uc=uc,
             cond_frame=z,  # cond_frame will be rescaled when calling the sampler
-            cond_mask=initial_cond_mask
+            cond_mask=initial_cond_mask,
         )
         sampling_progress.update(1)
         sample[0] = z[0]
@@ -345,7 +359,9 @@ def do_sample(
             for embedder in model.conditioner.embedders:
                 if hasattr(embedder, "skip_encode"):
                     embedder.skip_encode = True
-            c, uc = get_condition(model, value_dict, num_frames, force_uc_zero_embeddings, device)
+            c, uc = get_condition(
+                model, value_dict, num_frames, force_uc_zero_embeddings, device
+            )
             for embedder in model.conditioner.embedders:
                 if hasattr(embedder, "skip_encode"):
                     embedder.skip_encode = False
@@ -359,10 +375,12 @@ def do_sample(
                 cond=c,
                 uc=uc,
                 cond_frame=filled_latent,  # cond_frame will be rescaled when calling the sampler
-                cond_mask=prediction_cond_mask
+                cond_mask=prediction_cond_mask,
             )
             sampling_progress.update(1)
-            samples_z[(n + 1) * (num_frames - 3) + 3: (n + 1) * (num_frames - 3) + num_frames] = sample[3:]
+            samples_z[
+                (n + 1) * (num_frames - 3) + 3 : (n + 1) * (num_frames - 3) + num_frames
+            ] = sample[3:]
 
         unload_model(model.model)
         unload_model(model.denoiser)

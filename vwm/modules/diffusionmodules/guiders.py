@@ -49,11 +49,11 @@ class IdentityGuider(Guider):
 
 class LinearPredictionGuider(Guider):
     def __init__(
-            self,
-            num_frames: int = 25,
-            max_scale: float = 2.5,
-            min_scale: float = 1.0,
-            additional_cond_keys: Optional[Union[List[str], str]] = None
+        self,
+        num_frames: int = 25,
+        max_scale: float = 2.5,
+        min_scale: float = 1.0,
+        additional_cond_keys: Optional[Union[List[str], str]] = None,
     ):
         self.min_scale = min_scale
         self.max_scale = max_scale
@@ -86,13 +86,13 @@ class LinearPredictionGuider(Guider):
 
 class TrianglePredictionGuider(LinearPredictionGuider):
     def __init__(
-            self,
-            num_frames: int = 25,
-            max_scale: float = 2.5,
-            min_scale: float = 1.0,
-            period: float = 1.0,
-            period_fusing: Literal["mean", "multiply", "max"] = "max",
-            additional_cond_keys: Optional[Union[List[str], str]] = None
+        self,
+        num_frames: int = 25,
+        max_scale: float = 2.5,
+        min_scale: float = 1.0,
+        period: float = 1.0,
+        period_fusing: Literal["mean", "multiply", "max"] = "max",
+        additional_cond_keys: Optional[Union[List[str], str]] = None,
     ):
         super().__init__(num_frames, max_scale, min_scale, additional_cond_keys)
         values = torch.linspace(0, 1, num_frames)

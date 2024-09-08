@@ -9,9 +9,9 @@ from torch.utils.data import DataLoader, Dataset
 
 from .subsets import YouTubeDataset, NuScenesDataset, H5VideoDataset
 
-#try:
+# try:
 #    from sdata import create_dataset, create_dummy_dataset, create_loader
-#except ImportError as e:
+# except ImportError as e:
 #    print("#" * 100)
 #    print("Datasets not yet available")
 #    print("To enable, we need to add stable-datasets as a submodule")
@@ -21,21 +21,34 @@ from .subsets import YouTubeDataset, NuScenesDataset, H5VideoDataset
 #    exit(1)
 
 
-
-def dataset_mapping(subset_list: list, target_height: int, target_width: int, num_frames: int):
+def dataset_mapping(
+    subset_list: list, target_height: int, target_width: int, num_frames: int
+):
     datasets = list()
     for subset_name in subset_list:
         if subset_name == "YouTube":
             datasets.append(
-                YouTubeDataset(target_height=target_height, target_width=target_width, num_frames=num_frames)
+                YouTubeDataset(
+                    target_height=target_height,
+                    target_width=target_width,
+                    num_frames=num_frames,
+                )
             )
         elif subset_name == "NuScenes":
             datasets.append(
-                NuScenesDataset(target_height=target_height, target_width=target_width, num_frames=num_frames)
+                NuScenesDataset(
+                    target_height=target_height,
+                    target_width=target_width,
+                    num_frames=num_frames,
+                )
             )
         elif subset_name == "H5Video":
             datasets.append(
-                H5VideoDataset(target_height=target_height, target_width=target_width, num_frames=num_frames)
+                H5VideoDataset(
+                    target_height=target_height,
+                    target_width=target_width,
+                    num_frames=num_frames,
+                )
             )
 
         else:
@@ -44,7 +57,15 @@ def dataset_mapping(subset_list: list, target_height: int, target_width: int, nu
 
 
 class MultiSourceSamplerDataset(Dataset):
-    def __init__(self, subsets, probs, samples_per_epoch=1000, target_height=320, target_width=576, num_frames=25):
+    def __init__(
+        self,
+        subsets,
+        probs,
+        samples_per_epoch=1000,
+        target_height=320,
+        target_width=576,
+        num_frames=25,
+    ):
         self.subsets = dataset_mapping(subsets, target_height, target_width, num_frames)
         # if probabilities not provided, sample uniformly from all samples
         if probs is None:
@@ -80,16 +101,31 @@ class MultiSourceSamplerDataset(Dataset):
 
 
 class Sampler(LightningDataModule):
-    def __init__(self, batch_size, num_workers=0, prefetch_factor=2, shuffle=True, subsets=None, probs=None,
-                 samples_per_epoch=None, target_height=320, target_width=576, num_frames=25):
+    def __init__(
+        self,
+        batch_size,
+        num_workers=0,
+        prefetch_factor=2,
+        shuffle=True,
+        subsets=None,
+        probs=None,
+        samples_per_epoch=None,
+        target_height=320,
+        target_width=576,
+        num_frames=25,
+    ):
         super().__init__()
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.prefetch_factor = prefetch_factor if num_workers > 0 else 0
         self.shuffle = shuffle
         self.train_dataset = MultiSourceSamplerDataset(
-            subsets=subsets, probs=probs, samples_per_epoch=samples_per_epoch,
-            target_height=target_height, target_width=target_width, num_frames=num_frames
+            subsets=subsets,
+            probs=probs,
+            samples_per_epoch=samples_per_epoch,
+            target_height=target_height,
+            target_width=target_width,
+            num_frames=num_frames,
         )
 
     def prepare_data(self):
@@ -101,7 +137,7 @@ class Sampler(LightningDataModule):
             batch_size=self.batch_size,
             shuffle=self.shuffle,
             num_workers=self.num_workers,
-            prefetch_factor=self.prefetch_factor
+            prefetch_factor=self.prefetch_factor,
         )
 
     def test_dataloader(self):
@@ -110,7 +146,7 @@ class Sampler(LightningDataModule):
             batch_size=self.batch_size,
             shuffle=False,
             num_workers=self.num_workers,
-            prefetch_factor=self.prefetch_factor
+            prefetch_factor=self.prefetch_factor,
         )
 
     def val_dataloader(self):
@@ -119,6 +155,5 @@ class Sampler(LightningDataModule):
             batch_size=self.batch_size,
             shuffle=False,
             num_workers=self.num_workers,
-            prefetch_factor=self.prefetch_factor
+            prefetch_factor=self.prefetch_factor,
         )
-

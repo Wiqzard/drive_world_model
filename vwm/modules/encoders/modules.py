@@ -96,7 +96,9 @@ class GeneralConditioner(nn.Module):
             elif "input_keys" in embconfig:
                 embedder.input_keys = embconfig["input_keys"]
             else:
-                raise KeyError(f"Need either `input_key` or `input_keys` for embedder {embedder.__class__.__name__}")
+                raise KeyError(
+                    f"Need either `input_key` or `input_keys` for embedder {embedder.__class__.__name__}"
+                )
 
             embedder.legacy_ucg_val = embconfig.get("legacy_ucg_value", None)
             if embedder.legacy_ucg_val is not None:
@@ -114,7 +116,9 @@ class GeneralConditioner(nn.Module):
                 batch[embedder.input_key][i] = val
         return batch
 
-    def forward(self, batch: Dict, force_zero_embeddings: Optional[List] = None) -> Dict:
+    def forward(
+        self, batch: Dict, force_zero_embeddings: Optional[List] = None
+    ) -> Dict:
         output = dict()
         force_zero_embeddings = default(force_zero_embeddings, list())
         for embedder in self.embedders:
@@ -127,7 +131,10 @@ class GeneralConditioner(nn.Module):
                         emb_out = embedder(batch[embedder.input_key])
                     elif embedder.add_sequence_dim:  # concatenation
                         emb_dim = embedder.num_features * embedder.outdim
-                        emb_out = torch.zeros((batch["cond_aug"].shape[0], 1, emb_dim), device=batch["cond_aug"].device)
+                        emb_out = torch.zeros(
+                            (batch["cond_aug"].shape[0], 1, emb_dim),
+                            device=batch["cond_aug"].device,
+                        )
                     else:  # addition
                         continue
                 elif hasattr(embedder, "input_keys"):
@@ -141,31 +148,37 @@ class GeneralConditioner(nn.Module):
                 out_key = self.OUTPUT_DIM2KEYS[emb.dim()]
                 if embedder.ucg_rate > 0.0 and embedder.legacy_ucg_val is None:
                     emb = (
-                            expand_dims_like(
-                                torch.bernoulli(
-                                    (1.0 - embedder.ucg_rate) * torch.ones(emb.shape[0], device=emb.device)
-                                ),
-                                emb
-                            )
-                            * emb
+                        expand_dims_like(
+                            torch.bernoulli(
+                                (1.0 - embedder.ucg_rate)
+                                * torch.ones(emb.shape[0], device=emb.device)
+                            ),
+                            emb,
+                        )
+                        * emb
                     )
-                if hasattr(embedder, "input_key") and embedder.input_key in force_zero_embeddings:
+                if (
+                    hasattr(embedder, "input_key")
+                    and embedder.input_key in force_zero_embeddings
+                ):
                     emb = torch.zeros_like(emb)
                 if out_key in output:
                     if emb.shape[-1] == 768 and out_key == "vector":
                         output[out_key] += emb
                     else:
-                        output[out_key] = torch.cat((output[out_key], emb), self.KEY2CATDIM[out_key])
+                        output[out_key] = torch.cat(
+                            (output[out_key], emb), self.KEY2CATDIM[out_key]
+                        )
                 else:
                     output[out_key] = emb
         return output
 
     def get_unconditional_conditioning(
-            self,
-            batch_c: Dict,
-            batch_uc: Optional[Dict] = None,
-            force_cond_zero_embeddings: Optional[List[str]] = None,
-            force_uc_zero_embeddings: Optional[List[str]] = None
+        self,
+        batch_c: Dict,
+        batch_uc: Optional[Dict] = None,
+        force_cond_zero_embeddings: Optional[List[str]] = None,
+        force_uc_zero_embeddings: Optional[List[str]] = None,
     ):
         ucg_rates = list()
         for embedder in self.embedders:
@@ -186,15 +199,15 @@ class FrozenCLIPEmbedder(AbstractEmbModel):
     """
 
     def __init__(
-            self,
-            # version="path_to/openai/clip-vit-large-patch14/pytorch_model.bin",
-            version="openai/clip-vit-large-patch14",
-            device="cuda",
-            max_length=77,
-            freeze=True,
-            layer="last",
-            layer_idx=None,
-            always_return_pooled=False
+        self,
+        # version="path_to/openai/clip-vit-large-patch14/pytorch_model.bin",
+        version="openai/clip-vit-large-patch14",
+        device="cuda",
+        max_length=77,
+        freeze=True,
+        layer="last",
+        layer_idx=None,
+        always_return_pooled=False,
     ):  # clip-vit-base-patch32
         super().__init__()
         assert layer in ["last", "pooled", "hidden"]
@@ -226,12 +239,11 @@ class FrozenCLIPEmbedder(AbstractEmbModel):
             return_length=True,
             return_overflowing_tokens=False,
             padding="max_length",
-            return_tensors="pt"
+            return_tensors="pt",
         )
         tokens = batch_encoding["input_ids"].to(self.device)
         outputs = self.transformer(
-            input_ids=tokens,
-            output_hidden_states=self.layer == "hidden"
+            input_ids=tokens, output_hidden_states=self.layer == "hidden"
         )
         if self.layer == "last":
             z = outputs.last_hidden_state
@@ -254,28 +266,26 @@ class FrozenOpenCLIPImageEmbedder(AbstractEmbModel):
     """
 
     def __init__(
-            self,
-            #arch="ViT-L-14",
-            #version="laion2B_s32B_b82K",
-                #version="path_to/laion/CLIP-ViT-H-14-laion2B-s32B-b79K/open_clip_pytorch_model.bin",
-            arch="ViT-H-14",
-            version="laion2b_s32b_b79k",
-            device="cuda",
-            max_length=77,
-            freeze=True,
-            antialias=True,
-            ucg_rate=0.0,
-            unsqueeze_dim=False,
-            repeat_to_max_len=False,
-            num_image_crops=0,
-            output_tokens=False,
-            init_device=None
+        self,
+        # arch="ViT-L-14",
+        # version="laion2B_s32B_b82K",
+        # version="path_to/laion/CLIP-ViT-H-14-laion2B-s32B-b79K/open_clip_pytorch_model.bin",
+        arch="ViT-H-14",
+        version="laion2b_s32b_b79k",
+        device="cuda",
+        max_length=77,
+        freeze=True,
+        antialias=True,
+        ucg_rate=0.0,
+        unsqueeze_dim=False,
+        repeat_to_max_len=False,
+        num_image_crops=0,
+        output_tokens=False,
+        init_device=None,
     ):
         super().__init__()
         model, _, _ = open_clip.create_model_and_transforms(
-            arch,
-            device=torch.device(default(init_device, "cpu")),
-            pretrained=version
+            arch, device=torch.device(default(init_device, "cpu")), pretrained=version
         )
         del model.transformer
         self.model = model
@@ -289,8 +299,12 @@ class FrozenOpenCLIPImageEmbedder(AbstractEmbModel):
 
         self.antialias = antialias
 
-        self.register_buffer("mean", torch.Tensor([0.48145466, 0.4578275, 0.40821073]), persistent=False)
-        self.register_buffer("std", torch.Tensor([0.26862954, 0.26130258, 0.27577711]), persistent=False)
+        self.register_buffer(
+            "mean", torch.Tensor([0.48145466, 0.4578275, 0.40821073]), persistent=False
+        )
+        self.register_buffer(
+            "std", torch.Tensor([0.26862954, 0.26130258, 0.27577711]), persistent=False
+        )
         self.ucg_rate = ucg_rate
         self.unsqueeze_dim = unsqueeze_dim
         self.stored_batch = None
@@ -304,7 +318,7 @@ class FrozenOpenCLIPImageEmbedder(AbstractEmbModel):
             (224, 224),
             interpolation="bicubic",
             align_corners=True,
-            antialias=self.antialias
+            antialias=self.antialias,
         )
         x = (x + 1.0) / 2.0
         # renormalize according to clip
@@ -325,20 +339,21 @@ class FrozenOpenCLIPImageEmbedder(AbstractEmbModel):
         z = z.to(image.dtype)
         if self.ucg_rate > 0.0 and not no_dropout and not (self.max_crops > 0):
             z = (
-                    torch.bernoulli(
-                        (1.0 - self.ucg_rate) * torch.ones(z.shape[0], device=z.device)
-                    )[:, None]
-                    * z
+                torch.bernoulli(
+                    (1.0 - self.ucg_rate) * torch.ones(z.shape[0], device=z.device)
+                )[:, None]
+                * z
             )
             if tokens is not None:
                 tokens = (
-                        expand_dims_like(
-                            torch.bernoulli(
-                                (1.0 - self.ucg_rate) * torch.ones(tokens.shape[0], device=tokens.device)
-                            ),
-                            tokens
-                        )
-                        * tokens
+                    expand_dims_like(
+                        torch.bernoulli(
+                            (1.0 - self.ucg_rate)
+                            * torch.ones(tokens.shape[0], device=tokens.device)
+                        ),
+                        tokens,
+                    )
+                    * tokens
                 )
         if self.unsqueeze_dim:
             z = z[:, None]
@@ -357,9 +372,14 @@ class FrozenOpenCLIPImageEmbedder(AbstractEmbModel):
             z_pad = torch.cat(
                 (
                     z,
-                    torch.zeros(z.shape[0], self.max_length - z.shape[1], z.shape[2], device=z.device)
+                    torch.zeros(
+                        z.shape[0],
+                        self.max_length - z.shape[1],
+                        z.shape[2],
+                        device=z.device,
+                    ),
                 ),
-                1
+                1,
             )
             return z_pad, z_pad[:, 0, ...]
         else:
@@ -381,10 +401,11 @@ class FrozenOpenCLIPImageEmbedder(AbstractEmbModel):
             x = rearrange(x, "(b n) d -> b n d", n=self.max_crops)
             # drop out between 0 and all along the sequence axis
             x = (
-                    torch.bernoulli(
-                        (1.0 - self.ucg_rate) * torch.ones(x.shape[0], x.shape[1], 1, device=x.device)
-                    )
-                    * x
+                torch.bernoulli(
+                    (1.0 - self.ucg_rate)
+                    * torch.ones(x.shape[0], x.shape[1], 1, device=x.device)
+                )
+                * x
             )
             if tokens is not None:
                 tokens = rearrange(tokens, "(b n) t d -> b t (n d)", n=self.max_crops)
@@ -429,16 +450,16 @@ class ConcatTimestepEmbedderND(AbstractEmbModel):
 
 class VideoPredictionEmbedderWithEncoder(AbstractEmbModel):
     def __init__(
-            self,
-            n_cond_frames: int,
-            n_copies: int,
-            encoder_config: dict,
-            sigma_sampler_config: Optional[dict] = None,
-            sigma_cond_config: Optional[dict] = None,
-            is_ae: bool = False,
-            scale_factor: float = 1.0,
-            disable_encoder_autocast: bool = False,
-            en_and_decode_n_samples_a_time: Optional[int] = None
+        self,
+        n_cond_frames: int,
+        n_copies: int,
+        encoder_config: dict,
+        sigma_sampler_config: Optional[dict] = None,
+        sigma_cond_config: Optional[dict] = None,
+        is_ae: bool = False,
+        scale_factor: float = 1.0,
+        disable_encoder_autocast: bool = False,
+        en_and_decode_n_samples_a_time: Optional[int] = None,
     ):
         super().__init__()
         self.n_cond_frames = n_cond_frames
@@ -461,12 +482,12 @@ class VideoPredictionEmbedderWithEncoder(AbstractEmbModel):
         self.skip_encode = False
 
     def forward(
-            self, vid: torch.Tensor
+        self, vid: torch.Tensor
     ) -> Union[
         torch.Tensor,
         Tuple[torch.Tensor, torch.Tensor],
         Tuple[torch.Tensor, dict],
-        Tuple[Tuple[torch.Tensor, torch.Tensor], dict]
+        Tuple[Tuple[torch.Tensor, torch.Tensor], dict],
     ]:
         if self.skip_encode:
             return vid
@@ -487,9 +508,11 @@ class VideoPredictionEmbedderWithEncoder(AbstractEmbModel):
                 all_out = list()
                 for n in range(n_rounds):
                     if self.is_ae:
-                        out = self.encoder.encode(vid[n * n_samples: (n + 1) * n_samples])
+                        out = self.encoder.encode(
+                            vid[n * n_samples : (n + 1) * n_samples]
+                        )
                     else:
-                        out = self.encoder(vid[n * n_samples: (n + 1) * n_samples])
+                        out = self.encoder(vid[n * n_samples : (n + 1) * n_samples])
                     all_out.append(out)
 
             vid = torch.cat(all_out, dim=0)
@@ -505,7 +528,9 @@ class VideoPredictionEmbedderWithEncoder(AbstractEmbModel):
 
 
 class FrozenOpenCLIPImagePredictionEmbedder(AbstractEmbModel):
-    def __init__(self, open_clip_embedding_config: Dict, n_cond_frames: int, n_copies: int):
+    def __init__(
+        self, open_clip_embedding_config: Dict, n_cond_frames: int, n_copies: int
+    ):
         super().__init__()
         self.n_cond_frames = n_cond_frames
         self.n_copies = n_copies

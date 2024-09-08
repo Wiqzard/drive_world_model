@@ -8,7 +8,9 @@ from vwm.modules.diffusionmodules.util import make_beta_schedule
 from vwm.util import append_zero
 
 
-def generate_roughly_equally_spaced_steps(num_substeps: int, max_step: int) -> np.ndarray:
+def generate_roughly_equally_spaced_steps(
+    num_substeps: int, max_step: int
+) -> np.ndarray:
     return np.linspace(max_step - 1, 0, num_substeps, endpoint=False, dtype=int)[::-1]
 
 
@@ -42,7 +44,10 @@ class LegacyDDPMDiscretization(Discretization):
         super().__init__()
         self.num_timesteps = num_timesteps
         betas = make_beta_schedule(
-            "scaled_linear", num_timesteps, linear_start=linear_start, linear_end=linear_end
+            "scaled_linear",
+            num_timesteps,
+            linear_start=linear_start,
+            linear_end=linear_end,
         )
         alphas = 1.0 - betas
         self.alphas_cumprod = np.cumprod(alphas, axis=0)

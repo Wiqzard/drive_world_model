@@ -9,117 +9,75 @@ import init_proj_path
 from reward_utils import *
 
 VERSION2SPECS = {
-    "vwm": {
-        "config": "configs/inference/vista.yaml",
-        "ckpt": "ckpts/vista.safetensors"
-    }
+    "vwm": {"config": "configs/inference/vista.yaml", "ckpt": "ckpts/vista.safetensors"}
 }
 
 DATASET2SOURCES = {
-    "NUSCENES": {
-        "data_root": "data/nuscenes",
-        "anno_file": "annos/nuScenes_val.json"
-    },
-    "IMG": {
-        "data_root": "image_folder"
-    }
+    "NUSCENES": {"data_root": "data/nuscenes", "anno_file": "annos/nuScenes_val.json"},
+    "IMG": {"data_root": "image_folder"},
 }
 
 
 def parse_args(**parser_kwargs):
     parser = argparse.ArgumentParser(**parser_kwargs)
+    parser.add_argument("--version", type=str, default="vwm", help="model version")
+    parser.add_argument("--dataset", type=str, default="NUSCENES", help="dataset name")
     parser.add_argument(
-        "--version",
-        type=str,
-        default="vwm",
-        help="model version"
-    )
-    parser.add_argument(
-        "--dataset",
-        type=str,
-        default="NUSCENES",
-        help="dataset name"
-    )
-    parser.add_argument(
-        "--save",
-        type=str,
-        default="outputs",
-        help="directory to save samples"
+        "--save", type=str, default="outputs", help="directory to save samples"
     )
     parser.add_argument(
         "--action",
         type=str,
         default="traj",
-        help="action mode for control, such as traj, cmd, steer, goal"
+        help="action mode for control, such as traj, cmd, steer, goal",
     )
     parser.add_argument(
-        "--n_frames",
-        type=int,
-        default=25,
-        help="number of frames for each round"
+        "--n_frames", type=int, default=25, help="number of frames for each round"
     )
     parser.add_argument(
         "--n_conds",
         type=int,
         default=1,
-        help="number of initial condition frames for the first round"
+        help="number of initial condition frames for the first round",
     )
     parser.add_argument(
-        "--ens_size",
-        type=int,
-        default=5,
-        help="number of samples per case"
+        "--ens_size", type=int, default=5, help="number of samples per case"
     )
     parser.add_argument(
-        "--seed",
-        type=int,
-        default=23,
-        help="random seed for seed_everything"
+        "--seed", type=int, default=23, help="random seed for seed_everything"
     )
     parser.add_argument(
-        "--height",
-        type=int,
-        default=576,
-        help="target height of the generated video"
+        "--height", type=int, default=576, help="target height of the generated video"
     )
     parser.add_argument(
-        "--width",
-        type=int,
-        default=1024,
-        help="target width of the generated video"
+        "--width", type=int, default=1024, help="target width of the generated video"
     )
     parser.add_argument(
         "--cfg_scale",
         type=float,
         default=2.5,
-        help="scale of the classifier-free guidance"
+        help="scale of the classifier-free guidance",
     )
     parser.add_argument(
-        "--cond_aug",
-        type=float,
-        default=0.0,
-        help="strength of the noise augmentation"
+        "--cond_aug", type=float, default=0.0, help="strength of the noise augmentation"
     )
     parser.add_argument(
-        "--n_steps",
-        type=int,
-        default=10,
-        help="number of sampling steps"
+        "--n_steps", type=int, default=10, help="number of sampling steps"
     )
     parser.add_argument(
         "--rand_gen",
         action="store_false",
-        help="whether to generate samples randomly or sequentially"
+        help="whether to generate samples randomly or sequentially",
     )
     parser.add_argument(
-        "--low_vram",
-        action="store_true",
-        help="whether to save memory or not"
+        "--low_vram", action="store_true", help="whether to save memory or not"
     )
     return parser
 
 
-def get_sample(selected_index=0, dataset_name="NUSCENES", num_frames=25, action_mode="free"):
+def get_sample(
+    selected_index=0, dataset_name="NUSCENES", num_frames=25, action_mode="free"
+):
     dataset_dict = DATASET2SOURCES[dataset_name]
     action_dict = None
     if dataset_name == "IMG":
@@ -141,7 +99,9 @@ def get_sample(selected_index=0, dataset_name="NUSCENES", num_frames=25, action_
         path_list = list()
         if dataset_name == "NUSCENES":
             for index in range(num_frames):
-                image_path = os.path.join(dataset_dict["data_root"], sample_dict["frames"][index])
+                image_path = os.path.join(
+                    dataset_dict["data_root"], sample_dict["frames"][index]
+                )
                 assert os.path.exists(image_path), image_path
                 path_list.append(image_path)
             action_dict = dict()
@@ -158,11 +118,14 @@ def get_sample(selected_index=0, dataset_name="NUSCENES", num_frames=25, action_
                     action_dict["angle"] = torch.tensor(sample_dict["angle"][1:]) / 780
             elif action_mode == "goal":
                 # point might be invalid
-                if sample_dict["z"] > 0 and 0 < sample_dict["goal"][0] < 1600 and 0 < sample_dict["goal"][1] < 900:
-                    action_dict["goal"] = torch.tensor([
-                        sample_dict["goal"][0] / 1600,
-                        sample_dict["goal"][1] / 900
-                    ])
+                if (
+                    sample_dict["z"] > 0
+                    and 0 < sample_dict["goal"][0] < 1600
+                    and 0 < sample_dict["goal"][1] < 900
+                ):
+                    action_dict["goal"] = torch.tensor(
+                        [sample_dict["goal"][0] / 1600, sample_dict["goal"][1] / 900]
+                    )
             else:
                 raise ValueError(f"Unsupported action mode {action_mode}")
         else:
@@ -193,10 +156,9 @@ def load_img(file_name, target_height=320, target_width=576, device="cuda"):
     image = image.resize((target_width, target_height), resample=Image.LANCZOS)
     if not image.mode == "RGB":
         image = image.convert("RGB")
-    image = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Lambda(lambda x: x * 2.0 - 1.0)
-    ])(image)
+    image = transforms.Compose(
+        [transforms.ToTensor(), transforms.Lambda(lambda x: x * 2.0 - 1.0)]
+    )(image)
     return image.to(device)
 
 
@@ -213,10 +175,9 @@ if __name__ == "__main__":
     while sample_index >= 0:
         seed_everything(opt.seed)
 
-        frame_list, sample_index, dataset_length, action_dict = get_sample(sample_index,
-                                                                           opt.dataset,
-                                                                           opt.n_frames,
-                                                                           opt.action)
+        frame_list, sample_index, dataset_length, action_dict = get_sample(
+            sample_index, opt.dataset, opt.n_frames, opt.action
+        )
 
         img_seq = list()
         for each_path in frame_list:
@@ -234,9 +195,22 @@ if __name__ == "__main__":
                 value_dict[key] = value
 
         guider = "VanillaCFG"
-        sampler = init_sampling(guider=guider, steps=opt.n_steps, cfg_scale=opt.cfg_scale, num_frames=opt.n_frames)
+        sampler = init_sampling(
+            guider=guider,
+            steps=opt.n_steps,
+            cfg_scale=opt.cfg_scale,
+            num_frames=opt.n_frames,
+        )
 
-        uc_keys = ["cond_frames", "cond_frames_without_noise", "command", "trajectory", "speed", "angle", "goal"]
+        uc_keys = [
+            "cond_frames",
+            "cond_frames_without_noise",
+            "command",
+            "trajectory",
+            "speed",
+            "angle",
+            "goal",
+        ]
 
         out = do_sample(
             images,
@@ -246,7 +220,7 @@ if __name__ == "__main__":
             num_frames=opt.n_frames,
             ensemble_size=opt.ens_size,
             force_uc_zero_embeddings=uc_keys,
-            initial_cond_indices=[index for index in range(opt.n_conds)]
+            initial_cond_indices=[index for index in range(opt.n_conds)],
         )
 
         if isinstance(out, (tuple, list)):
